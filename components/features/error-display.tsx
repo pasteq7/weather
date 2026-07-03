@@ -43,6 +43,9 @@ export default function ErrorDisplay({
 
   if (!error || !showInline) return null;
 
+  const sourceLabel = t(`source.${error.source}`);
+  const reasonLabel = t(`reason.${error.reason}`);
+
   return (
     <div className="weather-error-banner shrink-0 px-0">
       <div className="weather-surface flex min-w-0 flex-col gap-2 rounded-lg border border-destructive/30 px-3 py-2 text-sm shadow-sm shadow-black/5 sm:flex-row sm:items-center sm:justify-between">
@@ -51,7 +54,15 @@ export default function ErrorDisplay({
           <div className="min-w-0">
             <p className="font-semibold leading-5 text-destructive">{error.title}</p>
             <p className="leading-5 text-destructive/85">{error.message}</p>
-            <p className="mt-0.5 text-xs leading-4 text-muted-foreground">{error.detail}</p>
+            <div className="mt-1 flex flex-wrap gap-1.5 text-[0.68rem] font-semibold leading-4 text-muted-foreground">
+              <span className="rounded border border-border/25 bg-background/15 px-1.5 py-0.5">{t('failed')}: {sourceLabel}</span>
+              <span className="rounded border border-border/25 bg-background/15 px-1.5 py-0.5">{t('reasonLabel')}: {reasonLabel}</span>
+              <span className="rounded border border-border/25 bg-background/15 px-1.5 py-0.5">{t('code')}: {error.code}</span>
+              {error.status && (
+                <span className="rounded border border-border/25 bg-background/15 px-1.5 py-0.5">{t('status')}: {error.status}</span>
+              )}
+            </div>
+            <p className="mt-1 text-xs leading-4 text-muted-foreground">{error.detail}</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center justify-end gap-1.5">

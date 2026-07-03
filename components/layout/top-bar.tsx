@@ -156,11 +156,17 @@ export default function TopBar() {
         setIsGeolocating(false);
         if (err.message.includes('denied') || err.message.includes('permission')) {
           const message = t('Toasts.locationDenied');
-          if (!isAuto) reportError({ code: 'ERROR_GEOLOCATION_DENIED', message });
+          if (!isAuto) reportError({ code: 'ERROR_GEOLOCATION_DENIED', message, reason: 'permission' });
           return message;
         }
         const message = isAuto ? t('Toasts.locationErrorAuto') : t('Toasts.locationError');
-        if (!isAuto) reportError({ code: 'ERROR_GEOLOCATION_UNAVAILABLE', message });
+        const reason = err.message.includes('not supported') ? 'unsupported' : 'unavailable';
+        if (!isAuto) reportError({
+          code: 'ERROR_GEOLOCATION_UNAVAILABLE',
+          message,
+          reason,
+          canRetry: reason !== 'unsupported',
+        });
         return message;
       },
     });

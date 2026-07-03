@@ -10,12 +10,14 @@ export class WeatherApiError extends Error {
   code: string;
   status?: number;
   service?: 'weather' | 'geocoding' | 'reverseGeo';
+  reason?: 'network' | 'http' | 'parse' | 'schema' | 'notFound' | 'missingLocation';
 
   constructor(
     code: string,
     options: {
       status?: number;
       service?: 'weather' | 'geocoding' | 'reverseGeo';
+      reason?: WeatherApiError['reason'];
     } = {}
   ) {
     super(code);
@@ -23,6 +25,7 @@ export class WeatherApiError extends Error {
     this.code = code;
     this.status = options.status;
     this.service = options.service;
+    this.reason = options.reason;
   }
 }
 
@@ -44,17 +47,17 @@ const fetchJson = async <T>(
   try {
     response = await fetch(url);
   } catch {
-    throw new WeatherApiError(errorCode, { service });
+    throw new WeatherApiError(errorCode, { service, reason: 'network' });
   }
 
   if (!response.ok) {
-    throw new WeatherApiError(errorCode, { status: response.status, service });
+    throw new WeatherApiError(errorCode, { status: response.status, service, reason: 'http' });
   }
 
   try {
     return await response.json() as T;
   } catch {
-    throw new WeatherApiError('ERROR_INVALID_RESPONSE', { service });
+    throw new WeatherApiError('ERROR_INVALID_RESPONSE', { service, reason: 'parse' });
   }
 };
 
@@ -107,7 +110,7 @@ export const getCoordinatesForCity = async (city: string) => {
   const result = data.results?.[0];
 
   if (!result || typeof result.latitude !== 'number' || typeof result.longitude !== 'number') {
-    throw new WeatherApiError('ERROR_CITY_NOT_FOUND', { service: 'geocoding' });
+    throw new WeatherApiError('ERROR_CITY_NOT_FOUND', { service: 'geocoding', reason: 'notFound' });
   }
   const { latitude, longitude } = result;
   const name = result.name || cityName;
@@ -156,7 +159,7 @@ export const fetchWeatherData = async (latitude: number, longitude: number, unit
   const data = await fetchJson<unknown>(`${WEATHER_API_URL}?${params.toString()}`, 'ERROR_FETCH_WEATHER', 'weather');
 
   if (!isWeatherData(data)) {
-    throw new WeatherApiError('ERROR_INVALID_WEATHER_DATA', { service: 'weather' });
+    throw new WeatherApiError('ERROR_INVALID_WEATHER_DATA', { service: 'weather', reason: 'schema' });
   }
 
   return data;

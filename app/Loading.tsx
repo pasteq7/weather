@@ -9,7 +9,7 @@ const DAILY_PLACEHOLDERS = 7;
 export default function Loading() {
   return (
     <main className="min-h-0 overflow-hidden" aria-busy="true" aria-label="Loading weather data">
-      <div className="weather-dashboard flex h-full min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain pb-1 pr-1 min-[72rem]:overflow-hidden min-[72rem]:pr-0">
+      <div className="weather-dashboard weather-loading-dashboard flex h-full min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain pb-1 pr-1 min-[72rem]:overflow-hidden min-[72rem]:pr-0">
         <div className="weather-summary-grid grid min-h-0 shrink-0 grid-cols-1 gap-2.5 min-[50rem]:grid-cols-[minmax(18rem,0.86fr)_minmax(0,1.6fr)]">
           <div className="flex min-h-0 flex-col">
             <TodayWeatherCardSkeleton />
@@ -104,7 +104,7 @@ function ForecastViewSkeleton({ type }: { type: 'hourly' | 'daily' }) {
         >
           <div className="grid h-full min-h-0 gap-1.5 overflow-hidden rounded-md border border-border/15 bg-background/10 p-1.5" style={{ gridTemplateColumns: `repeat(${placeholderCount}, minmax(0, 1fr))` }}>
             {Array.from({ length: placeholderCount }, (_, index) => (
-              <div key={index} className="flex min-h-0 min-w-0 flex-col items-center justify-between gap-1 overflow-hidden rounded-md px-1 py-1.5">
+              <div key={index} className="forecast-card__placeholder flex min-h-0 min-w-0 flex-col items-center justify-between gap-1 overflow-hidden rounded-md px-1 py-1.5">
                 <Skeleton className="h-2.5 w-9 rounded-full" />
                 <Skeleton className="h-[52%] w-full max-w-16 rounded-md" />
                 <Skeleton className="h-3 w-8 rounded-full" />

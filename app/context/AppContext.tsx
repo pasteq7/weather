@@ -28,6 +28,7 @@ interface Location {
 }
 
 export type AppErrorSource = 'weather' | 'geocoding' | 'reverseGeo' | 'geolocation' | 'unknown';
+export type AppErrorReason = 'network' | 'http' | 'parse' | 'schema' | 'notFound' | 'permission' | 'unavailable' | 'unsupported' | 'missingLocation' | 'unknown';
 
 export interface AppError {
   source: AppErrorSource;
@@ -35,6 +36,7 @@ export interface AppError {
   message: string;
   detail: string;
   code: string;
+  reason: AppErrorReason;
   target?: string;
   status?: number;
   canRetry: boolean;
@@ -46,6 +48,7 @@ type AppErrorInput = AppError | {
   source?: AppErrorSource;
   target?: string;
   status?: number;
+  reason?: AppErrorReason;
   message?: string;
   title?: string;
   detail?: string;
@@ -75,7 +78,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const hasCoordinates = (location: Location) => location.lat !== null && location.lon !== null;
 const ICON_STYLE_STORAGE_KEY = 'weather-icon-style';
-const NON_RETRYABLE_ERROR_CODES = new Set(['ERROR_CITY_NOT_FOUND', 'ERROR_GEOLOCATION_DENIED']);
+const NON_RETRYABLE_ERROR_CODES = new Set(['ERROR_CITY_NOT_FOUND', 'ERROR_GEOLOCATION_DENIED', 'ERROR_NO_LOCATION']);
 
 const ERROR_SOURCE_BY_CODE: Record<string, AppErrorSource> = {
   ERROR_FETCH_COORDINATES: 'geocoding',
@@ -127,7 +130,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const code = input.code.startsWith('ERROR_') ? input.code : 'ERROR_UNKNOWN';
     const source = input.source ?? ERROR_SOURCE_BY_CODE[code] ?? 'unknown';
+    const reason = input.reason ?? 'unknown';
     const sourceLabel = t(`Errors.source.${source}`);
+    const reasonLabel = t(`Errors.reason.${reason}`);
     const translatedMessage = t(`Errors.${code}`);
     const message = input.message ?? (
       translatedMessage === `Errors.${code}` ? t('Errors.ERROR_UNKNOWN') : translatedMessage
@@ -135,6 +140,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const title = input.title ?? t('Errors.failedSourceTitle', { service: sourceLabel });
     const detail = input.detail ?? t(input.target ? 'Errors.detailWithTarget' : 'Errors.detail', {
       service: sourceLabel,
+      reason: reasonLabel,
       target: input.target ?? '',
       code,
       status: input.status ?? t('Errors.notAvailable'),
@@ -146,6 +152,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       message,
       detail,
       code,
+      reason,
       target: input.target,
       status: input.status,
       canRetry: input.canRetry ?? !NON_RETRYABLE_ERROR_CODES.has(code),
@@ -205,6 +212,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
               code: 'ERROR_REVERSE_GEOCODING',
               source: 'reverseGeo',
               target: t('Weather.currentLocation'),
+              reason: 'unavailable',
               canRetry: true,
             });
           }
@@ -218,7 +226,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         lat = result.latitude;
         lon = result.longitude;
       } else {
-        throw new WeatherApiError('ERROR_NO_LOCATION');
+        throw new WeatherApiError('ERROR_NO_LOCATION', { reason: 'missingLocation' });
       }
       
       const completeWeatherData = { ...data, name, latitude: lat ?? undefined, longitude: lon ?? undefined };
@@ -252,6 +260,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         source: errorSource,
         target,
         status: weatherError?.status,
+        reason: weatherError?.reason ?? 'unknown',
       }));
       setWeatherData(previousData => previousData);
     } finally {

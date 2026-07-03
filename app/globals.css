@@ -207,35 +207,62 @@ body,
 }
 
 .weather-skeleton {
+  --skeleton-base: color-mix(in srgb, var(--weather-surface) 72%, var(--muted));
+  --skeleton-highlight: rgb(255 255 255 / 0.26);
   background:
-    linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent),
-    color-mix(in srgb, var(--weather-surface) 68%, var(--muted));
-  background-size: 220% 100%, 100% 100%;
+    linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent),
+    var(--skeleton-base);
   overflow: hidden;
   position: relative;
-  animation: weather-skeleton-shimmer 1.45s ease-in-out infinite;
+  transform: translateZ(0);
 }
 
 .dark .weather-skeleton {
-  background:
-    linear-gradient(90deg, transparent, rgb(255 255 255 / 0.08), transparent),
-    color-mix(in srgb, var(--weather-surface) 78%, var(--muted));
-  background-size: 220% 100%, 100% 100%;
+  --skeleton-base: color-mix(in srgb, var(--weather-surface) 80%, var(--muted));
+  --skeleton-highlight: rgb(255 255 255 / 0.1);
 }
 
-@keyframes weather-skeleton-shimmer {
+.weather-skeleton::after {
+  animation: weather-skeleton-glide 2.6s linear infinite;
+  animation-delay: var(--skeleton-delay, 0ms);
+  background: linear-gradient(90deg, transparent, var(--skeleton-highlight), transparent);
+  content: "";
+  inset: 0;
+  opacity: 0.85;
+  position: absolute;
+  transform: translateX(-150%);
+  will-change: transform;
+}
+
+.weather-loading-dashboard .weather-data-card:nth-child(2n) .weather-skeleton,
+.weather-loading-dashboard .forecast-card__placeholder:nth-child(2n) .weather-skeleton {
+  --skeleton-delay: -520ms;
+}
+
+.weather-loading-dashboard .weather-data-card:nth-child(3n) .weather-skeleton,
+.weather-loading-dashboard .forecast-card__placeholder:nth-child(3n) .weather-skeleton {
+  --skeleton-delay: -980ms;
+}
+
+.weather-loading-dashboard .weather-data-card:nth-child(4n) .weather-skeleton,
+.weather-loading-dashboard .forecast-card__placeholder:nth-child(4n) .weather-skeleton {
+  --skeleton-delay: -1340ms;
+}
+
+@keyframes weather-skeleton-glide {
   from {
-    background-position: 180% 0, 0 0;
+    transform: translateX(-150%);
   }
 
   to {
-    background-position: -80% 0, 0 0;
+    transform: translateX(150%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .weather-skeleton {
+  .weather-skeleton::after {
     animation: none;
+    opacity: 0;
   }
 }
 

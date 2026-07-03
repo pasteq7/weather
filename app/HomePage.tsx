@@ -27,6 +27,12 @@ export default function HomePage() {
           title={error.title}
           description={error.message}
           detail={error.detail}
+          diagnostics={[
+            `${t('Errors.failed')}: ${t(`Errors.source.${error.source}`)}`,
+            `${t('Errors.reasonLabel')}: ${t(`Errors.reason.${error.reason}`)}`,
+            `${t('Errors.code')}: ${error.code}`,
+            ...(error.status ? [`${t('Errors.status')}: ${error.status}`] : []),
+          ]}
           actionLabel={error.canRetry ? t('Errors.retry') : undefined}
           isBusy={isLoading}
           onAction={error.canRetry ? refreshData : undefined}
@@ -71,6 +77,7 @@ function StateCard({
   title,
   description,
   detail,
+  diagnostics,
   actionLabel,
   isBusy = false,
   onAction,
@@ -80,6 +87,7 @@ function StateCard({
   title: string;
   description: string;
   detail?: string;
+  diagnostics?: string[];
   actionLabel?: string;
   isBusy?: boolean;
   onAction?: () => void;
@@ -101,6 +109,13 @@ function StateCard({
           <div className="space-y-1.5">
             <h2 className="text-lg font-semibold text-card-foreground">{title}</h2>
             <p className="text-sm font-medium leading-6 text-muted-foreground">{description}</p>
+            {diagnostics && diagnostics.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-1.5 pt-1 text-[0.68rem] font-semibold leading-4 text-muted-foreground">
+                {diagnostics.map((item) => (
+                  <span key={item} className="rounded border border-border/25 bg-background/15 px-1.5 py-0.5">{item}</span>
+                ))}
+              </div>
+            )}
             {detail && <p className="text-xs font-medium leading-5 text-muted-foreground/80">{detail}</p>}
           </div>
           {actionLabel && onAction && (
