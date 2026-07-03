@@ -6,6 +6,26 @@ const GEO_API_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const REVERSE_GEO_API_URL = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
 const WEATHER_API_URL = 'https://api.open-meteo.com/v1/forecast';
 
+export class WeatherApiError extends Error {
+  code: string;
+  status?: number;
+  service?: 'weather' | 'geocoding' | 'reverseGeo';
+
+  constructor(
+    code: string,
+    options: {
+      status?: number;
+      service?: 'weather' | 'geocoding' | 'reverseGeo';
+    } = {}
+  ) {
+    super(code);
+    this.name = 'WeatherApiError';
+    this.code = code;
+    this.status = options.status;
+    this.service = options.service;
+  }
+}
+
 type GeocodingResponse = {
   results?: Array<{
     latitude?: number;
@@ -14,23 +34,27 @@ type GeocodingResponse = {
   }>;
 };
 
-const fetchJson = async <T>(url: string, errorCode: string): Promise<T> => {
+const fetchJson = async <T>(
+  url: string,
+  errorCode: string,
+  service?: WeatherApiError['service']
+): Promise<T> => {
   let response: Response;
 
   try {
     response = await fetch(url);
   } catch {
-    throw new Error(errorCode);
+    throw new WeatherApiError(errorCode, { service });
   }
 
   if (!response.ok) {
-    throw new Error(errorCode);
+    throw new WeatherApiError(errorCode, { status: response.status, service });
   }
 
   try {
     return await response.json() as T;
   } catch {
-    throw new Error('ERROR_INVALID_RESPONSE');
+    throw new WeatherApiError('ERROR_INVALID_RESPONSE', { service });
   }
 };
 
@@ -79,11 +103,11 @@ export const getCoordinatesForCity = async (city: string) => {
     format: 'json'
   });
 
-  const data = await fetchJson<GeocodingResponse>(`${GEO_API_URL}?${params.toString()}`, 'ERROR_FETCH_COORDINATES');
+  const data = await fetchJson<GeocodingResponse>(`${GEO_API_URL}?${params.toString()}`, 'ERROR_FETCH_COORDINATES', 'geocoding');
   const result = data.results?.[0];
 
   if (!result || typeof result.latitude !== 'number' || typeof result.longitude !== 'number') {
-    throw new Error('ERROR_CITY_NOT_FOUND');
+    throw new WeatherApiError('ERROR_CITY_NOT_FOUND', { service: 'geocoding' });
   }
   const { latitude, longitude } = result;
   const name = result.name || cityName;
@@ -129,10 +153,10 @@ export const fetchWeatherData = async (latitude: number, longitude: number, unit
     wind_speed_unit: isImperial ? 'mph' : 'kmh',
   });
 
-  const data = await fetchJson<unknown>(`${WEATHER_API_URL}?${params.toString()}`, 'ERROR_FETCH_WEATHER');
+  const data = await fetchJson<unknown>(`${WEATHER_API_URL}?${params.toString()}`, 'ERROR_FETCH_WEATHER', 'weather');
 
   if (!isWeatherData(data)) {
-    throw new Error('ERROR_INVALID_WEATHER_DATA');
+    throw new WeatherApiError('ERROR_INVALID_WEATHER_DATA', { service: 'weather' });
   }
 
   return data;

@@ -3,7 +3,7 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { WeatherData, ApiIssueKey } from '@/lib/types';
-import { fetchWeatherByCity, fetchWeatherData, getCityNameFromCoordinates } from '@/lib/api';
+import { fetchWeatherByCity, fetchWeatherData, getCityNameFromCoordinates, WeatherApiError } from '@/lib/api';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { MeteoconStyle } from '@/lib/meteocons';
@@ -27,13 +27,38 @@ interface Location {
   name: string | null;
 }
 
+export type AppErrorSource = 'weather' | 'geocoding' | 'reverseGeo' | 'geolocation' | 'unknown';
+
+export interface AppError {
+  source: AppErrorSource;
+  title: string;
+  message: string;
+  detail: string;
+  code: string;
+  target?: string;
+  status?: number;
+  canRetry: boolean;
+  occurredAt: number;
+}
+
+type AppErrorInput = AppError | {
+  code: string;
+  source?: AppErrorSource;
+  target?: string;
+  status?: number;
+  message?: string;
+  title?: string;
+  detail?: string;
+  canRetry?: boolean;
+} | null;
+
 interface AppContextType {
   location: Location;
   units: 'metric' | 'imperial';
   iconStyle: MeteoconStyle;
   weatherData: WeatherData | null;
   isLoading: boolean;
-  error: string | null;
+  error: AppError | null;
   isInitializing: boolean;
   apiStatus: ApiStatuses;
   setUnits: (units: 'metric' | 'imperial') => void;
@@ -43,13 +68,27 @@ interface AppContextType {
   refreshData: () => void;
   finishInitialization: () => void;
   setApiStatus: (service: keyof ApiStatuses, status: ApiStatus) => void;
-  reportError: (message: string | null) => void;
+  reportError: (error: AppErrorInput) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const hasCoordinates = (location: Location) => location.lat !== null && location.lon !== null;
 const ICON_STYLE_STORAGE_KEY = 'weather-icon-style';
+const NON_RETRYABLE_ERROR_CODES = new Set(['ERROR_CITY_NOT_FOUND', 'ERROR_GEOLOCATION_DENIED']);
+
+const ERROR_SOURCE_BY_CODE: Record<string, AppErrorSource> = {
+  ERROR_FETCH_COORDINATES: 'geocoding',
+  ERROR_CITY_NOT_FOUND: 'geocoding',
+  ERROR_FETCH_WEATHER: 'weather',
+  ERROR_INVALID_RESPONSE: 'weather',
+  ERROR_INVALID_WEATHER_DATA: 'weather',
+  ERROR_REVERSE_GEOCODING: 'reverseGeo',
+  ERROR_GEOLOCATION_DENIED: 'geolocation',
+  ERROR_GEOLOCATION_UNAVAILABLE: 'geolocation',
+  ERROR_NO_LOCATION: 'unknown',
+  ERROR_UNKNOWN: 'unknown',
+};
 
 const getInitialIconStyle = (): MeteoconStyle => {
   if (typeof window === 'undefined') return 'line';
@@ -65,7 +104,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [iconStyle, setIconStyleState] = useState<MeteoconStyle>(getInitialIconStyle);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [apiStatus, setApiStatusState] = useState<ApiStatuses>({
     openMeteo: { status: 'operational' },
@@ -81,9 +120,42 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setApiStatusState(prev => ({ ...prev, [service]: status }));
   }, []);
 
-  const reportError = useCallback((message: string | null) => {
-    setError(message);
-  }, []);
+  const buildAppError = useCallback((input: Exclude<AppErrorInput, null>): AppError => {
+    if ('occurredAt' in input) {
+      return input;
+    }
+
+    const code = input.code.startsWith('ERROR_') ? input.code : 'ERROR_UNKNOWN';
+    const source = input.source ?? ERROR_SOURCE_BY_CODE[code] ?? 'unknown';
+    const sourceLabel = t(`Errors.source.${source}`);
+    const translatedMessage = t(`Errors.${code}`);
+    const message = input.message ?? (
+      translatedMessage === `Errors.${code}` ? t('Errors.ERROR_UNKNOWN') : translatedMessage
+    );
+    const title = input.title ?? t('Errors.failedSourceTitle', { service: sourceLabel });
+    const detail = input.detail ?? t(input.target ? 'Errors.detailWithTarget' : 'Errors.detail', {
+      service: sourceLabel,
+      target: input.target ?? '',
+      code,
+      status: input.status ?? t('Errors.notAvailable'),
+    });
+
+    return {
+      source,
+      title,
+      message,
+      detail,
+      code,
+      target: input.target,
+      status: input.status,
+      canRetry: input.canRetry ?? !NON_RETRYABLE_ERROR_CODES.has(code),
+      occurredAt: Date.now(),
+    };
+  }, [t]);
+
+  const reportError = useCallback((nextError: AppErrorInput) => {
+    setError(nextError ? buildAppError(nextError) : null);
+  }, [buildAppError]);
 
   const setIconStyle = useCallback((style: MeteoconStyle) => {
     setIconStyleState(style);
@@ -120,6 +192,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       let name = currentLocation.name;
       let lat = currentLocation.lat;
       let lon = currentLocation.lon;
+      let nonBlockingError: AppError | null = null;
 
       if (lat !== null && lon !== null) {
         data = await fetchWeatherData(lat, lon, currentUnits, clientTimezone);
@@ -127,6 +200,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (!name) {
           const geoResult = await getCityNameFromCoordinates(lat, lon);
           setApiStatus('reverseGeo', { status: geoResult.ok ? 'operational' : 'outage' });
+          if (!geoResult.ok) {
+            nonBlockingError = buildAppError({
+              code: 'ERROR_REVERSE_GEOCODING',
+              source: 'reverseGeo',
+              target: t('Weather.currentLocation'),
+              canRetry: true,
+            });
+          }
           name = geoResult.name || t('Weather.currentLocation');
         }
       } else if (name) {
@@ -137,41 +218,48 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         lat = result.latitude;
         lon = result.longitude;
       } else {
-        throw new Error('No valid location data');
+        throw new WeatherApiError('ERROR_NO_LOCATION');
       }
       
       const completeWeatherData = { ...data, name, latitude: lat ?? undefined, longitude: lon ?? undefined };
       if (fetchId !== activeFetchIdRef.current) return;
 
       setWeatherData(completeWeatherData);
+      setError(nonBlockingError);
 
       setApiStatus('openMeteo', { status: 'operational' });
 
     } catch (e) {
       if (fetchId !== activeFetchIdRef.current) return;
 
-      const errorMessage = e instanceof Error ? e.message : 'ERROR_UNKNOWN';
-      if (errorMessage === 'ERROR_FETCH_COORDINATES') {
+      const weatherError = e instanceof WeatherApiError ? e : null;
+      const errorCode = weatherError?.code ?? (e instanceof Error ? e.message : 'ERROR_UNKNOWN');
+      const errorSource = weatherError?.service ?? ERROR_SOURCE_BY_CODE[errorCode] ?? 'unknown';
+      const target = currentLocation.name ?? (hasCoordinates(currentLocation) ? t('Weather.currentLocation') : undefined);
+
+      if (errorSource === 'geocoding' && errorCode === 'ERROR_FETCH_COORDINATES') {
         setApiStatus('reverseGeo', { status: 'outage' });
-      } else if (errorMessage === 'ERROR_CITY_NOT_FOUND') {
+      } else if (errorSource === 'geocoding' && errorCode === 'ERROR_CITY_NOT_FOUND') {
         setApiStatus('reverseGeo', { status: 'operational' });
-      } else if (errorMessage.startsWith('ERROR_')) {
+      } else if (errorSource === 'weather') {
         setApiStatus('openMeteo', { status: 'outage' });
       }
       
       console.error('Weather fetch error:', e);
-      const translatedError = errorMessage.startsWith('ERROR_')
-        ? t(`Errors.${errorMessage as 'ERROR_CITY_NOT_FOUND'}`)
-        : t('Errors.ERROR_UNKNOWN') || 'Failed to fetch weather data';
       
-      setError(translatedError);
+      setError(buildAppError({
+        code: errorCode,
+        source: errorSource,
+        target,
+        status: weatherError?.status,
+      }));
       setWeatherData(previousData => previousData);
     } finally {
       if (fetchId === activeFetchIdRef.current) {
         setIsLoading(false);
       }
     }
-  }, [t, setApiStatus]);
+  }, [t, setApiStatus, buildAppError]);
 
   useEffect(() => {
     if (location.name || hasCoordinates(location)) {

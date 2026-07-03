@@ -24,11 +24,12 @@ export default function HomePage() {
       ) : error && !weatherData ? (
         <StateCard
           icon={<AlertTriangle className="h-5 w-5" />}
-          title={t('Errors.loadFailedTitle')}
-          description={error}
-          actionLabel={t('Errors.retry')}
+          title={error.title}
+          description={error.message}
+          detail={error.detail}
+          actionLabel={error.canRetry ? t('Errors.retry') : undefined}
           isBusy={isLoading}
-          onAction={refreshData}
+          onAction={error.canRetry ? refreshData : undefined}
           tone="destructive"
         />
       ) : weatherData ? (
@@ -69,6 +70,7 @@ function StateCard({
   icon,
   title,
   description,
+  detail,
   actionLabel,
   isBusy = false,
   onAction,
@@ -77,6 +79,7 @@ function StateCard({
   icon: ReactNode;
   title: string;
   description: string;
+  detail?: string;
   actionLabel?: string;
   isBusy?: boolean;
   onAction?: () => void;
@@ -98,6 +101,7 @@ function StateCard({
           <div className="space-y-1.5">
             <h2 className="text-lg font-semibold text-card-foreground">{title}</h2>
             <p className="text-sm font-medium leading-6 text-muted-foreground">{description}</p>
+            {detail && <p className="text-xs font-medium leading-5 text-muted-foreground/80">{detail}</p>}
           </div>
           {actionLabel && onAction && (
             <Button className="mt-1" type="button" onClick={onAction} disabled={isBusy}>
