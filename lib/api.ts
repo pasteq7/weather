@@ -6,6 +6,69 @@ const GEO_API_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const REVERSE_GEO_API_URL = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
 const WEATHER_API_URL = 'https://api.open-meteo.com/v1/forecast';
 
+type GeocodingResponse = {
+  results?: Array<{
+    latitude?: number;
+    longitude?: number;
+    name?: string;
+  }>;
+};
+
+const fetchJson = async <T>(url: string, errorCode: string): Promise<T> => {
+  let response: Response;
+
+  try {
+    response = await fetch(url);
+  } catch {
+    throw new Error(errorCode);
+  }
+
+  if (!response.ok) {
+    throw new Error(errorCode);
+  }
+
+  try {
+    return await response.json() as T;
+  } catch {
+    throw new Error('ERROR_INVALID_RESPONSE');
+  }
+};
+
+const hasNumberArray = (value: unknown) => (
+  Array.isArray(value) && value.every((item) => typeof item === 'number')
+);
+
+const isWeatherData = (data: unknown): data is WeatherData => {
+  if (!data || typeof data !== 'object') return false;
+
+  const candidate = data as Partial<WeatherData>;
+  const { current, hourly, daily } = candidate;
+
+  return Boolean(
+    typeof candidate.timezone === 'string' &&
+    current &&
+    typeof current.temperature_2m === 'number' &&
+    typeof current.relative_humidity_2m === 'number' &&
+    typeof current.weather_code === 'number' &&
+    typeof current.wind_speed_10m === 'number' &&
+    typeof current.pressure_msl === 'number' &&
+    hourly &&
+    hasNumberArray(hourly.time) &&
+    hasNumberArray(hourly.temperature_2m) &&
+    hasNumberArray(hourly.precipitation_probability) &&
+    hasNumberArray(hourly.weather_code) &&
+    hasNumberArray(hourly.wind_speed_10m) &&
+    hasNumberArray(hourly.visibility) &&
+    daily &&
+    hasNumberArray(daily.time) &&
+    hasNumberArray(daily.weather_code) &&
+    hasNumberArray(daily.temperature_2m_max) &&
+    hasNumberArray(daily.temperature_2m_min) &&
+    hasNumberArray(daily.sunrise) &&
+    hasNumberArray(daily.sunset)
+  );
+};
+
 export const getCoordinatesForCity = async (city: string) => {
   const cityName = city.split(',')[0].trim();
 
@@ -16,16 +79,15 @@ export const getCoordinatesForCity = async (city: string) => {
     format: 'json'
   });
 
-  const response = await fetch(`${GEO_API_URL}?${params.toString()}`);
-  if (!response.ok) {
-    throw new Error('ERROR_FETCH_COORDINATES');
-  }
-  const data = await response.json();
+  const data = await fetchJson<GeocodingResponse>(`${GEO_API_URL}?${params.toString()}`, 'ERROR_FETCH_COORDINATES');
+  const result = data.results?.[0];
 
-  if (!data.results || data.results.length === 0) {
+  if (!result || typeof result.latitude !== 'number' || typeof result.longitude !== 'number') {
     throw new Error('ERROR_CITY_NOT_FOUND');
   }
-  const { latitude, longitude, name } = data.results[0];
+  const { latitude, longitude } = result;
+  const name = result.name || cityName;
+
   return { latitude, longitude, name };
 };
 
@@ -67,17 +129,18 @@ export const fetchWeatherData = async (latitude: number, longitude: number, unit
     wind_speed_unit: isImperial ? 'mph' : 'kmh',
   });
 
-  const response = await fetch(`${WEATHER_API_URL}?${params.toString()}`);
+  const data = await fetchJson<unknown>(`${WEATHER_API_URL}?${params.toString()}`, 'ERROR_FETCH_WEATHER');
 
-  if (!response.ok) {
-    throw new Error('ERROR_FETCH_WEATHER');
+  if (!isWeatherData(data)) {
+    throw new Error('ERROR_INVALID_WEATHER_DATA');
   }
-  return response.json();
+
+  return data;
 };
 
 export const fetchWeatherByCity = async (city: string, units: string = 'metric', timezone: string = 'auto') => {
-  const { latitude, longitude } = await getCoordinatesForCity(city);
+  const { latitude, longitude, name } = await getCoordinatesForCity(city);
   const weatherData = await fetchWeatherData(latitude, longitude, units, timezone);
   
-  return { ...weatherData, name: city, latitude, longitude };
+  return { ...weatherData, name, latitude, longitude };
 };

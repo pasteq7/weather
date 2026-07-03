@@ -43,6 +43,7 @@ interface AppContextType {
   refreshData: () => void;
   finishInitialization: () => void;
   setApiStatus: (service: keyof ApiStatuses, status: ApiStatus) => void;
+  reportError: (message: string | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -74,9 +75,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
   const hasInitializedRef = useRef(false);
   const isFirstRender = useRef(true);
+  const activeFetchIdRef = useRef(0);
 
   const setApiStatus = useCallback((service: keyof ApiStatuses, status: ApiStatus) => {
     setApiStatusState(prev => ({ ...prev, [service]: status }));
+  }, []);
+
+  const reportError = useCallback((message: string | null) => {
+    setError(message);
   }, []);
 
   const setIconStyle = useCallback((style: MeteoconStyle) => {
@@ -103,6 +109,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    const fetchId = activeFetchIdRef.current + 1;
+    activeFetchIdRef.current = fetchId;
     setIsLoading(true);
     setError(null);
 
@@ -123,6 +131,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
       } else if (name) {
         const result = await fetchWeatherByCity(name, currentUnits, clientTimezone);
+        setApiStatus('reverseGeo', { status: 'operational' });
         data = result;
         name = result.name || name;
         lat = result.latitude;
@@ -132,13 +141,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const completeWeatherData = { ...data, name, latitude: lat ?? undefined, longitude: lon ?? undefined };
+      if (fetchId !== activeFetchIdRef.current) return;
+
       setWeatherData(completeWeatherData);
 
       setApiStatus('openMeteo', { status: 'operational' });
 
     } catch (e) {
+      if (fetchId !== activeFetchIdRef.current) return;
+
       const errorMessage = e instanceof Error ? e.message : 'ERROR_UNKNOWN';
-      if (errorMessage.startsWith('ERROR_')) {
+      if (errorMessage === 'ERROR_FETCH_COORDINATES') {
+        setApiStatus('reverseGeo', { status: 'outage' });
+      } else if (errorMessage === 'ERROR_CITY_NOT_FOUND') {
+        setApiStatus('reverseGeo', { status: 'operational' });
+      } else if (errorMessage.startsWith('ERROR_')) {
         setApiStatus('openMeteo', { status: 'outage' });
       }
       
@@ -148,9 +165,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         : t('Errors.ERROR_UNKNOWN') || 'Failed to fetch weather data';
       
       setError(translatedError);
-      setWeatherData(null);
+      setWeatherData(previousData => previousData);
     } finally {
-      setIsLoading(false);
+      if (fetchId === activeFetchIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [t, setApiStatus]);
 
@@ -203,7 +222,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setLocationByCoords, 
       refreshData,
       finishInitialization,
-      setApiStatus
+      setApiStatus,
+      reportError
     }}>
       {children}
     </AppContext.Provider>

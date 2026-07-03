@@ -40,9 +40,14 @@
     "saveFavoriteError": "Could not save favorites."
   },
   "Errors": {
+    "loadFailedTitle": "Weather could not be loaded",
+    "retry": "Retry",
+    "dismiss": "Dismiss error",
     "ERROR_FETCH_COORDINATES": "Failed to fetch city coordinates.",
     "ERROR_CITY_NOT_FOUND": "City not found. Please try a different name.",
     "ERROR_FETCH_WEATHER": "Failed to fetch weather data.",
+    "ERROR_INVALID_RESPONSE": "The weather service returned an unreadable response.",
+    "ERROR_INVALID_WEATHER_DATA": "The weather service returned incomplete weather data.",
     "ERROR_UNKNOWN": "An unknown error occurred while fetching weather data."
   },
   "Weather": {
@@ -56,7 +61,9 @@
     "feelsLike": "Feels like",
     "minMax": "Min / Max",
     "currentLocation": "Current Location",
-    "unknownLocation": "Unknown Location"
+    "unknownLocation": "Unknown Location",
+    "noLocationTitle": "Choose a location",
+    "noLocationDescription": "Search for a city or use your current location from the toolbar."
   },
   "Forecast": {
     "hourlyTitle": "Next 24 Hours",

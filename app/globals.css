@@ -206,6 +206,39 @@ body,
   color: var(--primary);
 }
 
+.weather-skeleton {
+  background:
+    linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent),
+    color-mix(in srgb, var(--weather-surface) 68%, var(--muted));
+  background-size: 220% 100%, 100% 100%;
+  overflow: hidden;
+  position: relative;
+  animation: weather-skeleton-shimmer 1.45s ease-in-out infinite;
+}
+
+.dark .weather-skeleton {
+  background:
+    linear-gradient(90deg, transparent, rgb(255 255 255 / 0.08), transparent),
+    color-mix(in srgb, var(--weather-surface) 78%, var(--muted));
+  background-size: 220% 100%, 100% 100%;
+}
+
+@keyframes weather-skeleton-shimmer {
+  from {
+    background-position: 180% 0, 0 0;
+  }
+
+  to {
+    background-position: -80% 0, 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weather-skeleton {
+    animation: none;
+  }
+}
+
 .today-weather-card {
   container-type: inline-size;
 }

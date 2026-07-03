@@ -40,9 +40,14 @@
     "saveFavoriteError": "Impossible d'enregistrer les favoris."
   },
   "Errors": {
+    "loadFailedTitle": "Impossible de charger la meteo",
+    "retry": "Reessayer",
+    "dismiss": "Masquer l'erreur",
     "ERROR_FETCH_COORDINATES": "Échec de la récupération des coordonnées de la ville.",
     "ERROR_CITY_NOT_FOUND": "Ville non trouvée. Veuillez essayer un autre nom.",
     "ERROR_FETCH_WEATHER": "Échec de la récupération des données météo.",
+    "ERROR_INVALID_RESPONSE": "Le service meteo a renvoye une reponse illisible.",
+    "ERROR_INVALID_WEATHER_DATA": "Le service meteo a renvoye des donnees incompletes.",
     "ERROR_UNKNOWN": "Une erreur inconnue est survenue lors de la récupération des données météo."
   },
   "Weather": {
@@ -56,7 +61,9 @@
     "feelsLike": "Ressenti",
     "minMax": "Min / Max",
     "currentLocation": "Position actuelle",
-    "unknownLocation": "Lieu inconnu"
+    "unknownLocation": "Lieu inconnu",
+    "noLocationTitle": "Choisir un lieu",
+    "noLocationDescription": "Recherchez une ville ou utilisez votre position depuis la barre d'outils."
   },
   "Forecast": {
     "hourlyTitle": "Prochaines 24 heures",

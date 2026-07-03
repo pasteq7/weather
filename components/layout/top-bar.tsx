@@ -53,7 +53,8 @@ export default function TopBar() {
     refreshData,
     isInitializing,
     finishInitialization,
-    setApiStatus
+    setApiStatus,
+    reportError
   } = useAppContext();
 
   const [locationInput, setLocationInput] = useState('');
@@ -143,6 +144,7 @@ export default function TopBar() {
       success: (position) => {
         if (isAuto) finishInitialization();
         setApiStatus('geolocation', { status: 'operational' });
+        reportError(null);
         setLocationByCoords(position.coords.latitude, position.coords.longitude);
         setIsGeolocating(false);
         return t('Toasts.locationFound');
@@ -153,12 +155,16 @@ export default function TopBar() {
         console.error("Geolocation failed:", err);
         setIsGeolocating(false);
         if (err.message.includes('denied') || err.message.includes('permission')) {
-          return t('Toasts.locationDenied');
+          const message = t('Toasts.locationDenied');
+          if (!isAuto) reportError(message);
+          return message;
         }
-        return isAuto ? t('Toasts.locationErrorAuto') : t('Toasts.locationError');
+        const message = isAuto ? t('Toasts.locationErrorAuto') : t('Toasts.locationError');
+        if (!isAuto) reportError(message);
+        return message;
       },
     });
-  }, [isGeolocating, finishInitialization, setLocationByCoords, t, setApiStatus]);
+  }, [isGeolocating, finishInitialization, setLocationByCoords, t, setApiStatus, reportError]);
 
   useEffect(() => {
     if (isInitializing) {
