@@ -74,18 +74,18 @@ export default function TodayWeatherCard({ weatherData, units, location }: Today
           </div>
         </div>
 
-        <div className="today-weather-card__current flex min-h-0 flex-1 flex-col items-center justify-center gap-2.5 px-2 py-1.5">
-          <div className="flex min-h-0 justify-center">
+        <div className="today-weather-card__current grid min-h-0 flex-1 grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-center gap-3 px-2 py-1.5 max-[20rem]:grid-cols-1 max-[20rem]:justify-items-center max-[20rem]:gap-2">
+          <div className="flex min-h-0 justify-center justify-self-end max-[20rem]:justify-self-auto">
             <div className="today-weather-card__icon h-24 w-24 shrink-0 drop-shadow-[0_18px_24px_rgba(0,0,0,0.22)] sm:h-28 sm:w-28 min-[72rem]:h-28 min-[72rem]:w-28">
               <CurrentWeatherIcon iconCode={icon} />
             </div>
           </div>
-          <div className="flex min-w-0 flex-col items-center text-center">
+          <div className="flex min-w-0 flex-col items-start text-left max-[20rem]:items-center max-[20rem]:text-center">
             <p className="today-weather-card__temperature tabular-nums text-[3.25rem] font-normal leading-none text-card-foreground sm:text-[3.55rem] min-[72rem]:text-[3.35rem]">
               {temp}
               <span className="today-weather-card__unit align-top text-xl font-semibold text-muted-foreground/75 sm:text-2xl">{tempUnit}</span>
             </p>
-            <div className="today-weather-card__details mt-1.5 flex flex-col items-center gap-1.5">
+            <div className="today-weather-card__details mt-1.5 flex flex-col items-start gap-1.5 max-[20rem]:items-center">
               <p className="today-weather-card__feels-like text-xs font-medium text-muted-foreground sm:text-sm">
                 {t('Weather.feelsLike')} {feelsLikeTemp}{tempUnit}
               </p>

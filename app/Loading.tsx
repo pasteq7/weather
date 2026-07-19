@@ -40,14 +40,14 @@ function TodayWeatherCardSkeleton() {
             <Skeleton className="h-3.5 w-11 rounded-full" />
           </div>
         </div>
-        <div className="today-weather-card__current flex min-h-0 flex-1 flex-col items-center justify-center gap-2.5 px-2 py-1.5">
-          <div className="flex min-h-0 justify-center">
+        <div className="today-weather-card__current grid min-h-0 flex-1 grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-center gap-3 px-2 py-1.5 max-[20rem]:grid-cols-1 max-[20rem]:justify-items-center max-[20rem]:gap-2">
+          <div className="flex min-h-0 justify-center justify-self-end max-[20rem]:justify-self-auto">
             <div className="relative h-24 w-24 sm:h-28 sm:w-28 min-[72rem]:h-28 min-[72rem]:w-28">
               <Skeleton className="today-weather-card__icon h-full w-full rounded-full" />
               <Skeleton className="absolute bottom-3 left-1/2 h-4 w-14 -translate-x-1/2 rounded-full opacity-70" />
             </div>
           </div>
-          <div className="flex min-w-0 flex-col items-center gap-2 text-center">
+          <div className="flex min-w-0 flex-col items-start gap-2 text-left max-[20rem]:items-center max-[20rem]:text-center">
             <Skeleton className="h-14 w-28 sm:h-16 sm:w-32" />
             <Skeleton className="h-3.5 w-32 rounded-full" />
             <Skeleton className="h-7 w-24 rounded-full" />
