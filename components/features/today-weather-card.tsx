@@ -76,8 +76,8 @@ export default function TodayWeatherCard({ weatherData, units, location }: Today
           </div>
         </div>
 
-        <div className="today-weather-card__current mt-6 grid min-h-0 flex-none grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-center gap-3 px-2 py-1.5 max-[20rem]:grid-cols-1 max-[20rem]:justify-items-center max-[20rem]:gap-2">
-          <div className="flex min-h-0 justify-center justify-self-end max-[20rem]:justify-self-auto">
+        <div className="today-weather-card__current mt-3 grid min-h-0 flex-1 grid-cols-[auto_auto] content-center justify-center items-center gap-3 px-2 py-1.5 max-[20rem]:grid-cols-1 max-[20rem]:justify-items-center max-[20rem]:gap-2">
+          <div className="flex min-h-0 justify-center">
             <div className="today-weather-card__icon h-36 w-36 shrink-0 drop-shadow-[0_18px_24px_rgba(0,0,0,0.22)] sm:h-42 sm:w-42 min-[72rem]:h-42 min-[72rem]:w-42">
               <CurrentWeatherIcon iconCode={icon} />
             </div>
@@ -92,9 +92,9 @@ export default function TodayWeatherCard({ weatherData, units, location }: Today
                 {t('Weather.feelsLike')} {feelsLikeTemp}{tempUnit}
               </p>
               <p className="today-weather-card__range self-start text-left text-sm font-medium max-[20rem]:self-auto">
-                <span className="today-weather-card__temp-low">{lowTemp}{tempUnit}</span>
-                <span className="text-muted-foreground/70"> / </span>
                 <span className="today-weather-card__temp-high">{highTemp}{tempUnit}</span>
+                <span className="text-muted-foreground/70"> / </span>
+                <span className="today-weather-card__temp-low">{lowTemp}{tempUnit}</span>
               </p>
             </div>
           </div>
