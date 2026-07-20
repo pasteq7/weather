@@ -7,7 +7,7 @@ import { useViewPreference } from '@/hooks/use-view-preference';
 import { Card, CardContent } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { LineChart, Line, XAxis, YAxis, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
+import { Area, ComposedChart, XAxis, YAxis, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
 import { BarChart, List, Thermometer, Wind, Droplets } from 'lucide-react';
 import { formatTemperature, mapWmoToWeather, formatWindSpeed, cn } from '@/lib/utils';
 import { WeatherData, DailyDataPoint, HourlyDataPoint } from '@/lib/types';
@@ -44,7 +44,7 @@ function DailyForecastItem({ day, units, chartId, itemIndex, locale }: {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <p className="forecast-item__label max-w-full truncate text-xs font-semibold">{capitalizedDayLabel}</p>
+      <p className="forecast-item__label max-w-full truncate text-xs font-medium">{capitalizedDayLabel}</p>
       <div className="forecast-item__icon relative flex items-center justify-center">
         <div className={cn("h-full w-full transition-opacity duration-300", { "opacity-0": isHovered })}>
           <div 
@@ -60,7 +60,7 @@ function DailyForecastItem({ day, units, chartId, itemIndex, locale }: {
         </div>
       </div>
       <div className="forecast-item__value text-xs">
-        <span className="font-bold">{maxTemp}{maxTempUnit}</span>
+        <span className="font-semibold">{maxTemp}{maxTempUnit}</span>
         <span className="text-muted-foreground"> / {minTemp}{maxTempUnit}</span>
       </div>
     </div>
@@ -100,7 +100,7 @@ function HourlyForecastItem({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <p className="forecast-item__label text-xs font-semibold tabular-nums">{timeLabel}</p>
+      <p className="forecast-item__label text-xs font-medium tabular-nums">{timeLabel}</p>
       <div className="forecast-item__icon relative flex items-center justify-center">
         <div className={cn("h-full w-full transition-opacity duration-300", { "opacity-0": isHovered })}>
           <div 
@@ -115,7 +115,7 @@ function HourlyForecastItem({
           <p className="text-xs capitalize">{description}</p>
         </div>
       </div>
-      <p className="forecast-item__value text-sm font-bold">{temp}{tempUnit}</p>
+      <p className="forecast-item__value text-sm font-semibold">{temp}{tempUnit}</p>
     </div>
   );
 }
@@ -132,7 +132,7 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
   const chartConfig = useMemo(() => ({
     temperature: {
       label: t('temperature'),
-      color: "var(--muted-foreground)",
+      color: "var(--accent)",
     },
     rain: {
       label: t('rain'),
@@ -391,7 +391,7 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
     <Card className={cn("forecast-card weather-surface shrink-0 overflow-hidden rounded-lg border-border/25 py-0 shadow-none", type === 'hourly' ? "forecast-card--hourly" : "forecast-card--daily")}>
       <CardContent className="forecast-card__content flex h-full min-h-0 flex-col gap-2 px-3 py-3 sm:gap-2.5 sm:px-4 sm:py-3.5">
         <div className="forecast-card__header flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="forecast-card__title text-base font-bold text-card-foreground/85">{config[type].title}</h3>
+          <h3 className="forecast-card__title text-base font-semibold text-card-foreground/85">{config[type].title}</h3>
           <div className="forecast-card__controls flex w-full flex-wrap items-center justify-between gap-1.5 sm:w-auto sm:justify-end sm:gap-2">
             {view === 'chart' && (
               <TooltipProvider>
@@ -478,7 +478,7 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
         </div>
         <div
           className={cn(
-            "forecast-card__legend flex min-h-3 flex-wrap items-center gap-3 text-xs font-semibold text-muted-foreground/85 transition-opacity duration-300 sm:min-h-4",
+            "forecast-card__legend flex min-h-3 flex-wrap items-center gap-3 text-xs font-medium text-muted-foreground/85 transition-opacity duration-300 sm:min-h-4",
             view === 'chart' ? "opacity-100" : "forecast-card__legend--inactive opacity-0"
           )}
           aria-hidden={view !== 'chart'}
@@ -513,11 +513,25 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
               >
                 {!chartData.length ? <Skeleton className="w-full h-full" /> : (
                   <ChartContainer config={chartConfig} className="w-full h-full">
-                    <LineChart
+                    <ComposedChart
                       data={chartData}
                       margin={{ top: 8, right: 12, left: -4, bottom: 0 }}
                       id={`${chartId}-chart`}
                     >
+                      <defs>
+                        <linearGradient id={`${chartId}-temperature-fill`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--color-temperature)" stopOpacity={0.3} />
+                          <stop offset="100%" stopColor="var(--color-temperature)" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id={`${chartId}-rain-fill`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--color-rain)" stopOpacity={0.22} />
+                          <stop offset="100%" stopColor="var(--color-rain)" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id={`${chartId}-wind-fill`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--color-wind)" stopOpacity={0.22} />
+                          <stop offset="100%" stopColor="var(--color-wind)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
                       <XAxis
                         dataKey="time"
                         type="number"
@@ -602,42 +616,48 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
                         />
                       ))}
                       {displayModes.includes('temperature') && (
-                        <Line
+                        <Area
                           yAxisId="temp"
                           type="monotone"
                           dataKey="temperature"
                           stroke="var(--color-temperature)"
+                          strokeLinecap="round"
+                          strokeWidth={2}
+                          fill={`url(#${chartId}-temperature-fill)`}
                           dot={false}
                           isAnimationActive={false}
                           activeDot={{ r: 5, fill: "var(--color-temperature)", stroke: "var(--background)", strokeWidth: 2 }}
-                          strokeWidth={2}
                         />
                       )}
                       {displayModes.includes('rain') && (
-                        <Line
+                        <Area
                           yAxisId="rain"
                           type="monotone"
                           dataKey="rain"
                           stroke="var(--color-rain)"
+                          strokeLinecap="round"
+                          strokeWidth={2}
+                          fill={`url(#${chartId}-rain-fill)`}
                           dot={false}
                           isAnimationActive={false}
                           activeDot={{ r: 5, fill: "var(--color-rain)", stroke: "var(--background)", strokeWidth: 2 }}
-                          strokeWidth={2}
                         />
                       )}
                       {displayModes.includes('wind') && (
-                        <Line
+                        <Area
                           yAxisId="wind"
                           type="monotone"
                           dataKey="wind"
                           stroke="var(--color-wind)"
+                          strokeLinecap="round"
+                          strokeWidth={2}
+                          fill={`url(#${chartId}-wind-fill)`}
                           dot={false}
                           isAnimationActive={false}
                           activeDot={{ r: 5, fill: "var(--color-wind)", stroke: "var(--background)", strokeWidth: 2 }}
-                          strokeWidth={2}
                         />
                       )}
-                    </LineChart>
+                    </ComposedChart>
                   </ChartContainer>
                 )}
               </div>

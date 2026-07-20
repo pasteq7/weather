@@ -60,17 +60,19 @@ function TodayWeatherCardSkeleton() {
 
 function WeatherDataGridSkeleton() {
   return (
-    <div className="weather-data-grid grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
+    <Card className="weather-data-grid weather-surface grid grid-cols-3 gap-px overflow-hidden rounded-lg border-border/25 bg-border/35 p-px shadow-none">
       {Array.from({ length: WEATHER_DATA_CARD_COUNT }, (_, index) => (
-        <Card key={index} className="weather-data-card weather-surface flex min-h-[3.25rem] min-w-0 flex-row items-center gap-1.5 rounded-lg border-border/25 px-2 py-1.5 shadow-none sm:min-h-[3.5rem] sm:gap-2 sm:px-2.5 sm:py-1.5 min-[72rem]:min-h-[3.15rem] min-[72rem]:px-2.5 min-[72rem]:py-1.5">
-          <Skeleton className="weather-data-card__icon h-8 w-8 shrink-0 rounded-md sm:h-9 sm:w-9 min-[72rem]:h-8 min-[72rem]:w-8" />
-          <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-            <Skeleton className="h-2.5 w-1/2 rounded-full" />
-            <Skeleton className="h-5 w-4/5 rounded-md sm:h-6" />
+        <div key={index} className="weather-data-card min-h-16 min-w-0 bg-card/20 px-2 py-1.5 sm:min-h-[4.25rem] sm:px-2.5 sm:py-1.5 min-[72rem]:min-h-16 min-[72rem]:px-2.5 min-[72rem]:py-1.5">
+          <div className="flex h-full min-w-0 items-center gap-1.5 sm:gap-2">
+            <Skeleton className="weather-data-card__icon h-11 w-11 shrink-0 rounded-md sm:h-12 sm:w-12 min-[72rem]:h-11 min-[72rem]:w-11" />
+            <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+              <Skeleton className="h-2.5 w-1/2 rounded-full" />
+              <Skeleton className="h-5 w-4/5 rounded-md sm:h-6" />
+            </div>
           </div>
-        </Card>
+        </div>
       ))}
-    </div>
+    </Card>
   );
 }
 

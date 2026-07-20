@@ -16,7 +16,7 @@
   --text-5xl: 2.625rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-figtree);
+  --font-sans: var(--font-source-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -59,7 +59,7 @@
 
 :root {
   --radius: 0.5rem;
-  --font-figtree: "Figtree", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-source-sans: "Source Sans 3", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
 
   --background: #f1e8e3;
   --foreground: #332f4c;
@@ -154,6 +154,7 @@ body,
   body {
     @apply bg-background text-foreground;
     font-size: var(--text-base);
+    font-synthesis: none;
     min-height: 100dvh;
     font-feature-settings: "tnum" 1, "cv02" 1, "cv03" 1, "cv04" 1;
   }
@@ -373,8 +374,7 @@ body,
     min-height: 0 !important;
   }
 
-  .weather-right-column,
-  .weather-data-grid {
+  .weather-right-column {
     gap: clamp(0.5rem, 1.2vh, 0.7rem) !important;
   }
 
@@ -591,19 +591,15 @@ body,
     min-height: 0 !important;
   }
 
-  .weather-data-grid {
-    gap: 0.5rem !important;
-  }
-
   .weather-data-card {
     gap: 0.4rem !important;
-    min-height: 3rem !important;
+    min-height: 3.5rem !important;
     padding: 0.3rem 0.5rem !important;
   }
 
   .weather-data-card__icon {
-    height: 2rem !important;
-    width: 2rem !important;
+    height: 2.5rem !important;
+    width: 2.5rem !important;
   }
 
   .weather-data-card__title {

@@ -301,7 +301,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
   return (
     <div className="weather-top-bar relative z-50 flex w-full flex-col gap-2 sm:flex-row sm:items-center">
       {currentTime && (
-        <div className="weather-top-bar__time weather-surface hidden items-center gap-1.5 whitespace-nowrap rounded-md border border-border/25 px-2.5 text-sm font-semibold tabular-nums text-muted-foreground backdrop-blur-sm md:flex md:h-9">
+        <div className="weather-top-bar__time weather-surface hidden items-center gap-1.5 whitespace-nowrap rounded-md border border-border/25 px-2.5 text-sm font-medium tabular-nums text-muted-foreground backdrop-blur-sm md:flex md:h-9">
           <Clock className="h-3.5 w-3.5 text-chart-2" />
           {currentTime}
         </div>

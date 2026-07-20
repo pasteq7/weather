@@ -3,6 +3,7 @@
 'use client';
 
 import DataCard from "./data-card";
+import { Card } from "@/components/ui/card";
 import { WeatherData } from "@/lib/types";
 import { 
   formatHumidity, 
@@ -47,10 +48,10 @@ export default function WeatherDataGrid({ weatherData, units }: WeatherDataGridP
   ];
 
   return (
-    <div className="weather-data-grid grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
+    <Card className="weather-data-grid weather-surface grid grid-cols-3 gap-px overflow-hidden rounded-lg border-border/25 bg-border/35 p-px shadow-none">
       {cardData.map((card) => (
         <DataCard key={card.title} {...card} />
       ))}
-    </div>
+    </Card>
   );
 }

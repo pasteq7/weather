@@ -1,53 +1,49 @@
-# Weather Vite
+# Weather
 
-![Weather Vite screenshot](weather.png)
+![Weather dashboard](weather.png)
 
-A modern weather application built with React and Vite that provides real-time weather data, detailed forecasts, and a user-friendly, responsive interface.
+A responsive weather dashboard built with React and Vite. Search for a place or use your device location to see current conditions, detailed forecasts, and a local precipitation radar.
 
-## Live Demo
+## What it does
 
-[https://weather-mage.vercel.app/](https://weather-mage.vercel.app/)
+- Shows current temperature, feels-like temperature, daily high/low, humidity, wind, pressure, visibility, sunrise, and sunset.
+- Provides a 24-hour hourly forecast and a 14-day daily forecast, each available as a chart or a compact list.
+- Searches Open-Meteo locations with keyboard-friendly suggestions and lets you save favorite places.
+- Includes an embedded Windy precipitation radar centered on the selected location.
+- Supports English and French, metric and imperial units, light and dark themes, and three weather-icon styles.
+- Persists display preferences, the active view, theme, favorite locations, and the last selected location in the browser.
 
-## Features
+## Data and services
 
--   **Real-time Weather:** Search for any city or use your current location to get up-to-the-minute weather data.
--   **Detailed Forecasts:** View hourly (24-hour) and daily (5-day) forecasts in both chart and list formats.
--   **Comprehensive Data:** Access a wide range of metrics, including temperature, humidity, wind speed, pressure, visibility, and sunrise/sunset times.
--   **User-Friendly Interface:**
-    -   Supports light and dark modes.
-    -   Switch between metric and imperial units.
-    -   Save your favorite locations for quick access.
--   **Modern UI:** A clean, fully responsive design featuring skeleton loading states and animated weather icons.
+- [Open-Meteo](https://open-meteo.com/) for weather forecasts and place search
+- [BigDataCloud](https://www.bigdatacloud.com/) for reverse geocoding the device location
+- [Windy](https://www.windy.com/) for the embedded radar map
+- [Capacitor Geolocation](https://capacitorjs.com/docs/apis/geolocation) when running as a native app, with the browser Geolocation API on the web
 
-## Tech Stack
+## Stack
 
--   **Framework:** [React](https://react.dev/) + [Vite](https://vite.dev/)
--   **Language:** [TypeScript](https://www.typescriptlang.org/)
--   **Styling:** [Tailwind CSS](https://tailwindcss.com/) with [shadcn/ui](https://ui.shadcn.com/)
--   **Charting:** [Recharts](https://recharts.org/)
--   **APIs:**
-    -   [Open-Meteo](https://open-meteo.com/) (Weather Data)
-    -   [BigDataCloud](https://www.bigdatacloud.com/) (Reverse Geocoding)
--   **Native Features:** [Capacitor](https://capacitorjs.com/) (Geolocation)
+- React 19, TypeScript, and Vite
+- Tailwind CSS 4 and Radix UI primitives
+- Recharts for forecast charts
+- Source Sans 3 for a clear, compact interface typography
 
+## Run locally
 
-### Installation
+```sh
+npm install
+npm run dev
+```
 
-1.  **Clone the repository:**
-    ```sh
-    git clone https://github.com/pasteq7/weather
-    cd weather
-    ```
+Vite prints the local URL when it starts (usually `http://localhost:5173`). No environment variables are required.
 
-2.  **Install dependencies:**
-    ```sh
-    npm install
-    ```
-    *Note: No `.env` file or environment variables are required to run this project.*
+## Other commands
 
-3.  **Run the development server:**
-    ```sh
-    npm run dev
-    ```
+```sh
+npm run build    # Type-check and create a production build
+npm run lint     # Check source files with ESLint
+npm run preview  # Serve the production build locally
+```
 
-4.  Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+## Notes
+
+Weather, geocoding, radar, and the web font are external services. The app displays a clear retryable error state when a weather or location request cannot complete. Browser location access requires the visitor’s permission.

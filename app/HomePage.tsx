@@ -124,15 +124,15 @@ function StateCard({
           </div>
           <div className="space-y-1.5">
             <h2 className="text-lg font-semibold text-card-foreground">{title}</h2>
-            <p className="text-sm font-medium leading-6 text-muted-foreground">{description}</p>
+            <p className="text-sm leading-6 text-muted-foreground">{description}</p>
             {diagnostics && diagnostics.length > 0 && (
-              <div className="flex flex-wrap justify-center gap-1.5 pt-1 text-[0.68rem] font-semibold leading-4 text-muted-foreground">
+              <div className="flex flex-wrap justify-center gap-1.5 pt-1 text-[0.68rem] font-medium leading-4 text-muted-foreground">
                 {diagnostics.map((item) => (
                   <span key={item} className="rounded border border-border/25 bg-background/15 px-1.5 py-0.5">{item}</span>
                 ))}
               </div>
             )}
-            {detail && <p className="text-xs font-medium leading-5 text-muted-foreground/80">{detail}</p>}
+            {detail && <p className="text-xs leading-5 text-muted-foreground/80">{detail}</p>}
           </div>
           {actionLabel && onAction && (
             <Button className="mt-1" type="button" onClick={onAction} disabled={isBusy}>

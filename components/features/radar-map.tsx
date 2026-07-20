@@ -40,7 +40,7 @@ export default function RadarMap() {
   return (
     <section className="weather-radar-map weather-surface flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border/25 shadow-sm shadow-black/5">
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border/25 px-3 py-2 sm:px-4">
-        <div className="flex min-w-0 items-center gap-2 text-sm font-semibold text-card-foreground">
+        <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-card-foreground">
           <Radar className="h-4 w-4 shrink-0 text-chart-2" />
           <span>{t('title')}</span>
         </div>

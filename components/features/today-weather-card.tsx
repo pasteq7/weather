@@ -68,11 +68,11 @@ export default function TodayWeatherCard({ weatherData, units, location }: Today
             >
               {displayLocation}
             </h2>
-            <p className="today-weather-card__description mt-1 text-xs font-semibold capitalize text-muted-foreground sm:text-sm">{description}</p>
+            <p className="today-weather-card__description mt-1 text-xs font-medium capitalize text-muted-foreground sm:text-sm">{description}</p>
           </div>
-          <div className="today-weather-card__updated shrink-0 text-right text-[0.66rem] font-semibold leading-snug text-muted-foreground/90">
+          <div className="today-weather-card__updated shrink-0 text-right text-[0.66rem] font-medium leading-snug text-muted-foreground/90">
             <span className="today-weather-card__updated-label block">{lastUpdatedLabel}</span>
-            <span className="today-weather-card__updated-time block font-semibold text-card-foreground/85">{displayLastFetchedTime}</span>
+            <span className="today-weather-card__updated-time block font-medium text-card-foreground/85">{displayLastFetchedTime}</span>
           </div>
         </div>
 
@@ -85,13 +85,13 @@ export default function TodayWeatherCard({ weatherData, units, location }: Today
           <div className="flex min-w-0 flex-col items-start text-left max-[20rem]:items-center max-[20rem]:text-center">
             <p className="today-weather-card__temperature tabular-nums text-[4.25rem] font-normal leading-none text-card-foreground sm:text-[4.75rem] min-[72rem]:text-[4.5rem]">
               {temp}
-              <span className="today-weather-card__unit align-top text-xl font-semibold text-muted-foreground/75 sm:text-2xl">{tempUnit}</span>
+              <span className="today-weather-card__unit align-top text-xl font-medium text-muted-foreground/75 sm:text-2xl">{tempUnit}</span>
             </p>
             <div className="today-weather-card__details mt-1.5 flex w-full flex-col items-start gap-1.5 max-[20rem]:items-center">
               <p className="today-weather-card__feels-like text-xs font-medium text-muted-foreground sm:text-sm">
                 {t('Weather.feelsLike')} {feelsLikeTemp}{tempUnit}
               </p>
-              <p className="today-weather-card__range self-start text-left text-sm font-semibold max-[20rem]:self-auto">
+              <p className="today-weather-card__range self-start text-left text-sm font-medium max-[20rem]:self-auto">
                 <span className="today-weather-card__temp-low">{lowTemp}{tempUnit}</span>
                 <span className="text-muted-foreground/70"> / </span>
                 <span className="today-weather-card__temp-high">{highTemp}{tempUnit}</span>
