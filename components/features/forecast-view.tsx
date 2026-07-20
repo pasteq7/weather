@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useMemo, useCallback, useState, useEffect } from 'react';
+import { useMemo, useCallback, useState, useEffect, useRef, type MouseEvent, type WheelEvent } from 'react';
 import { useViewPreference } from '@/hooks/use-view-preference'; 
 import { Card, CardContent } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -17,9 +17,43 @@ import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { useTranslations, useLocale } from 'next-intl';
 
 const DAILY_FORECAST_DAYS = 14;
-const DAILY_LIST_PAGE_SIZE = 7;
-const HOURLY_LIST_PAGE_SIZE = 4;
-const LARGE_SCREEN_QUERY = '(min-width: 72rem)';
+
+function useHorizontalMouseDrag() {
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => () => cleanupRef.current?.(), []);
+
+  const handleMouseDown = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+
+    const scrollElement = event.currentTarget;
+    const startX = event.clientX;
+    const startScrollLeft = scrollElement.scrollLeft;
+
+    const handleMouseMove = (moveEvent: globalThis.MouseEvent) => {
+      const distance = moveEvent.clientX - startX;
+      if (Math.abs(distance) < 2) return;
+
+      scrollElement.classList.add('is-dragging');
+      scrollElement.scrollLeft = startScrollLeft - distance;
+    };
+
+    const handleMouseUp = () => {
+      scrollElement.classList.remove('is-dragging');
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      cleanupRef.current = null;
+    };
+
+    cleanupRef.current?.();
+    cleanupRef.current = handleMouseUp;
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    event.preventDefault();
+  }, []);
+
+  return { onMouseDown: handleMouseDown };
+}
 
 function DailyForecastItem({ day, units, chartId, itemIndex, locale }: { 
   day: DailyDataPoint; 
@@ -44,7 +78,7 @@ function DailyForecastItem({ day, units, chartId, itemIndex, locale }: {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <p className="forecast-item__label max-w-full truncate text-xs font-medium">{capitalizedDayLabel}</p>
+      <p className="forecast-item__label max-w-full truncate text-sm font-medium">{capitalizedDayLabel}</p>
       <div className="forecast-item__icon relative flex items-center justify-center">
         <div className={cn("h-full w-full transition-opacity duration-300", { "opacity-0": isHovered })}>
           <div 
@@ -59,7 +93,7 @@ function DailyForecastItem({ day, units, chartId, itemIndex, locale }: {
           <p className="text-xs capitalize">{description}</p>
         </div>
       </div>
-      <div className="forecast-item__value text-xs">
+      <div className="forecast-item__value text-sm">
         <span className="font-semibold">{maxTemp}{maxTempUnit}</span>
         <span className="text-muted-foreground"> / {minTemp}{maxTempUnit}</span>
       </div>
@@ -100,7 +134,7 @@ function HourlyForecastItem({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <p className="forecast-item__label text-xs font-medium tabular-nums">{timeLabel}</p>
+      <p className="forecast-item__label text-sm font-medium tabular-nums">{timeLabel}</p>
       <div className="forecast-item__icon relative flex items-center justify-center">
         <div className={cn("h-full w-full transition-opacity duration-300", { "opacity-0": isHovered })}>
           <div 
@@ -115,7 +149,7 @@ function HourlyForecastItem({
           <p className="text-xs capitalize">{description}</p>
         </div>
       </div>
-      <p className="forecast-item__value text-sm font-semibold">{temp}{tempUnit}</p>
+      <p className="forecast-item__value text-base font-semibold">{temp}{tempUnit}</p>
     </div>
   );
 }
@@ -153,22 +187,27 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
   );
   const { view, displayModes } = preferences;
   const [isMounted, setIsMounted] = useState(false);
-  const [listPageIndex, setListPageIndex] = useState(0);
-  const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [currentTimestamp, setCurrentTimestamp] = useState(() => Math.floor(Date.now() / 1000));
+  const horizontalMouseDrag = useHorizontalMouseDrag();
 
-  useEffect(() => {
-    setIsMounted(true);
+  const handleListWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
+    const scrollElement = event.currentTarget;
+    const distance = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (distance === 0 || scrollElement.scrollWidth <= scrollElement.clientWidth) return;
+
+    const nextScrollLeft = Math.max(0, Math.min(
+      scrollElement.scrollLeft + distance,
+      scrollElement.scrollWidth - scrollElement.clientWidth
+    ));
+
+    if (nextScrollLeft !== scrollElement.scrollLeft) {
+      scrollElement.scrollLeft = nextScrollLeft;
+      event.preventDefault();
+    }
   }, []);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia(LARGE_SCREEN_QUERY);
-    const handleChange = () => setIsLargeScreen(mediaQuery.matches);
-
-    handleChange();
-    mediaQuery.addEventListener('change', handleChange);
-
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    setIsMounted(true);
   }, []);
 
   useEffect(() => {
@@ -323,29 +362,9 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
     }
   }, [weatherData, type, currentTimestamp]);
 
-  const isDailyList = type === 'daily';
-  const listPageSize = isDailyList
-    ? DAILY_LIST_PAGE_SIZE
-    : isLargeScreen
-      ? Math.max(1, listData.length)
-      : HOURLY_LIST_PAGE_SIZE;
-  const listPageCount = Math.max(1, Math.ceil(listData.length / listPageSize));
-  const visibleListData = useMemo(
-    () => listData.slice(
-      listPageIndex * listPageSize,
-      (listPageIndex + 1) * listPageSize
-    ),
-    [listData, listPageIndex, listPageSize]
-  );
-  const visibleListColumns = Math.max(1, Math.min(visibleListData.length, listPageSize));
-
-  useEffect(() => {
-    setListPageIndex(0);
-  }, [type, view]);
-
-  useEffect(() => {
-    setListPageIndex((currentPage) => Math.min(currentPage, listPageCount - 1));
-  }, [listPageCount]);
+  const listItemWidth = type === 'daily'
+    ? "basis-[calc((100%-0.75rem)/4)] min-[50rem]:basis-[calc((100%-1.5rem)/7)]"
+    : "basis-[calc((100%-0.75rem)/4)] min-[72rem]:basis-[calc((100%-1.75rem)/8)]";
 
   const tempMetrics = useMemo(() => {
     if (!chartData.length) return { domain: [0, 0], min: 0, max: 0, ticks: [0] };
@@ -671,57 +690,39 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
                     : "opacity-0 pointer-events-none"
                 )}
               >
-                <div
-                  className="grid min-h-0 flex-1 gap-1 overflow-hidden"
-                  style={{ gridTemplateColumns: `repeat(${visibleListColumns}, minmax(0, 1fr))` }}
-                >
-                  {type === 'daily'
-                    ? (visibleListData as DailyDataPoint[]).map((day, index) => (
-                        <DailyForecastItem
-                          key={`${day.time}-${index}`}
-                          day={day}
-                          units={units}
-                          chartId={chartId}
-                          itemIndex={(listPageIndex * listPageSize) + index}
-                          locale={locale}
-                        />
-                      ))
-                    : (visibleListData as HourlyDataPoint[]).map((hour, index) => (
-                        <HourlyForecastItem
-                          key={`${hour.time}-${index}`}
-                          hour={hour}
-                          units={units}
-                          timezone={weatherData.timezone}
-                          chartId={chartId}
-                          itemIndex={(listPageIndex * listPageSize) + index}
-                          locale={locale}
-                        />
-                      ))
-                  }
-                </div>
-                {listPageCount > 1 && (
-                  <div className="flex h-4 shrink-0 items-center justify-center gap-1.5" aria-label={t('forecastPagination')}>
-                    {Array.from({ length: listPageCount }, (_, pageIndex) => (
-                      <button
-                        key={pageIndex}
-                        type="button"
-                        className="group flex h-4 w-4 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-                        aria-current={pageIndex === listPageIndex ? 'page' : undefined}
-                        aria-label={t('forecastPage', { page: pageIndex + 1, total: listPageCount })}
-                        onClick={() => setListPageIndex(pageIndex)}
-                      >
-                        <span
-                          className={cn(
-                            "block h-1.5 rounded-full transition-all",
-                            pageIndex === listPageIndex
-                              ? "w-4 bg-primary"
-                              : "w-1.5 bg-muted-foreground/35 group-hover:bg-muted-foreground/55"
-                          )}
-                        />
-                      </button>
-                    ))}
+                <div className="forecast-card__list-shell min-h-0 flex-1">
+                  <div
+                    className="forecast-card__list flex h-full cursor-grab touch-pan-y snap-x snap-mandatory gap-1 overflow-x-auto overflow-y-hidden select-none"
+                    onWheel={handleListWheel}
+                    {...horizontalMouseDrag}
+                  >
+                    {type === 'daily'
+                      ? (listData as DailyDataPoint[]).map((day, index) => (
+                          <div key={`${day.time}-${index}`} className={cn("h-full shrink-0 snap-start", listItemWidth)}>
+                            <DailyForecastItem
+                              day={day}
+                              units={units}
+                              chartId={chartId}
+                              itemIndex={index}
+                              locale={locale}
+                            />
+                          </div>
+                        ))
+                      : (listData as HourlyDataPoint[]).map((hour, index) => (
+                          <div key={`${hour.time}-${index}`} className={cn("h-full shrink-0 snap-start", listItemWidth)}>
+                            <HourlyForecastItem
+                              hour={hour}
+                              units={units}
+                              timezone={weatherData.timezone}
+                              chartId={chartId}
+                              itemIndex={index}
+                              locale={locale}
+                            />
+                          </div>
+                        ))
+                    }
                   </div>
-                )}
+                </div>
               </div>
             </>
           )}

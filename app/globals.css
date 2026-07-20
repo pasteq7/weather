@@ -321,6 +321,44 @@ body,
   max-height: 400px;
 }
 
+.forecast-card__list-shell {
+  position: relative;
+}
+
+.forecast-card__list-shell::before,
+.forecast-card__list-shell::after {
+  content: "";
+  inset-block: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 1.25rem;
+  z-index: 1;
+}
+
+.forecast-card__list-shell::before {
+  background: linear-gradient(to right, var(--weather-surface), transparent);
+  left: 0;
+}
+
+.forecast-card__list-shell::after {
+  background: linear-gradient(to left, var(--weather-surface), transparent);
+  right: 0;
+}
+
+.forecast-card__list {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.forecast-card__list::-webkit-scrollbar {
+  display: none;
+}
+
+.forecast-card__list.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+}
+
 .weather-surface,
 .weather-top-bar [data-slot="button"] {
   background-color: var(--weather-surface);
@@ -506,7 +544,7 @@ body,
   }
 
   .forecast-card--hourly .forecast-item__label {
-    font-size: 0.58rem !important;
+    font-size: 0.75rem !important;
   }
 
   .forecast-card--hourly .forecast-item__icon {
@@ -514,7 +552,7 @@ body,
   }
 
   .forecast-card--hourly .forecast-item__value {
-    font-size: 0.68rem !important;
+    font-size: 0.875rem !important;
   }
 }
 
