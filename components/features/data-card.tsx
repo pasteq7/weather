@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface DataCardProps {
   iconType: string;
@@ -60,32 +61,36 @@ export default function DataCard({ iconType, title, data, unit }: DataCardProps)
 
   return (
     <div className="weather-data-card min-h-16 min-w-0 bg-card/20 px-2 py-1.5 sm:min-h-[4.25rem] sm:px-2.5 sm:py-1.5 min-[72rem]:min-h-16 min-[72rem]:px-2.5 min-[72rem]:py-1.5">
-      <div className="flex h-full min-w-0 items-center gap-1.5 sm:gap-2">
-        <div className="weather-data-card__icon h-11 w-11 shrink-0 text-card-foreground opacity-90 sm:h-12 sm:w-12 min-[72rem]:h-11 min-[72rem]:w-11">
-          {isSunTimeIcon ? (
-            <SunTimeIcon isSunset={iconType === "sunset"} />
-          ) : hasColorAccent ? (
-            <img aria-hidden="true" src={iconPath} className="block h-full w-full" />
-          ) : (
-            <span
-              aria-hidden="true"
-              className="block h-full w-full bg-current [mask-position:center] [mask-repeat:no-repeat] [mask-size:contain] [-webkit-mask-position:center] [-webkit-mask-repeat:no-repeat] [-webkit-mask-size:contain]"
-              style={iconStyle}
-            />
-          )}
-        </div>
-        <div className="flex min-w-0 flex-1 flex-col justify-center">
-          <p className="weather-data-card__title truncate text-[0.78rem] font-medium leading-[1.05] text-muted-foreground/85">{title}</p>
-          {data === undefined || data === null ? (
-            <Skeleton className="mt-1 h-6 w-3/4" />
-          ) : (
-            <div className="flex min-w-0 items-baseline gap-0.5 sm:gap-1">
-              <p className="weather-data-card__value whitespace-nowrap text-lg font-medium leading-none text-card-foreground sm:text-xl min-[72rem]:text-lg">{data}</p>
-              {unit && <p className="weather-data-card__unit whitespace-nowrap text-[0.72rem] font-medium leading-none text-muted-foreground/85 sm:text-xs">{unit}</p>}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex h-full min-w-0 cursor-help items-center gap-1.5 sm:gap-2">
+            <div className="weather-data-card__icon h-11 w-11 shrink-0 text-card-foreground opacity-90 sm:h-12 sm:w-12 min-[72rem]:h-11 min-[72rem]:w-11">
+              {isSunTimeIcon ? (
+                <SunTimeIcon isSunset={iconType === "sunset"} />
+              ) : hasColorAccent ? (
+                <img aria-hidden="true" src={iconPath} className="block h-full w-full" />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="block h-full w-full bg-current [mask-position:center] [mask-repeat:no-repeat] [mask-size:contain] [-webkit-mask-position:center] [-webkit-mask-repeat:no-repeat] [-webkit-mask-size:contain]"
+                  style={iconStyle}
+                />
+              )}
             </div>
-          )}
-        </div>
-      </div>
+            <div className="flex min-w-0 flex-1 items-center">
+              {data === undefined || data === null ? (
+                <Skeleton className="h-6 w-3/4" />
+              ) : (
+                <div className="flex min-w-0 items-baseline gap-0.5 sm:gap-1">
+                  <p className="weather-data-card__value whitespace-nowrap text-lg font-medium leading-none text-card-foreground sm:text-xl min-[72rem]:text-lg">{data}</p>
+                  {unit && <p className="weather-data-card__unit whitespace-nowrap text-[0.72rem] font-medium leading-none text-muted-foreground/85 sm:text-xs">{unit}</p>}
+                </div>
+              )}
+            </div>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" sideOffset={4}>{title}</TooltipContent>
+      </Tooltip>
     </div>
   );
 }
