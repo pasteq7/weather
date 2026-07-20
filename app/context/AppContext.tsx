@@ -19,6 +19,7 @@ interface ApiStatuses {
   openMeteo: ApiStatus;
   reverseGeo: ApiStatus;
   geolocation: ApiStatus;
+  windy: ApiStatus;
 }
 
 interface Location {
@@ -67,6 +68,7 @@ interface AppContextType {
   setUnits: (units: 'metric' | 'imperial') => void;
   setIconStyle: (style: MeteoconStyle) => void;
   setLocationByName: (name: string) => void;
+  setLocationBySuggestion: (location: { name: string; lat: number; lon: number }) => void;
   setLocationByCoords: (lat: number, lon: number) => void;
   refreshData: () => void;
   finishInitialization: () => void;
@@ -78,6 +80,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const hasCoordinates = (location: Location) => location.lat !== null && location.lon !== null;
 const ICON_STYLE_STORAGE_KEY = 'weather-icon-style';
+const UNITS_STORAGE_KEY = 'weather-units';
 const NON_RETRYABLE_ERROR_CODES = new Set(['ERROR_CITY_NOT_FOUND', 'ERROR_GEOLOCATION_DENIED', 'ERROR_NO_LOCATION']);
 
 const ERROR_SOURCE_BY_CODE: Record<string, AppErrorSource> = {
@@ -100,10 +103,16 @@ const getInitialIconStyle = (): MeteoconStyle => {
   return savedStyle === 'fill' || savedStyle === 'monochrome' ? savedStyle : 'line';
 };
 
+const getInitialUnits = (): 'metric' | 'imperial' => {
+  if (typeof window === 'undefined') return 'metric';
+
+  return window.localStorage.getItem(UNITS_STORAGE_KEY) === 'imperial' ? 'imperial' : 'metric';
+};
+
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const t = useTranslations();
   const [location, setLocation] = useState<Location>({ lat: null, lon: null, name: null });
-  const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
+  const [units, setUnits] = useState<'metric' | 'imperial'>(getInitialUnits);
   const [iconStyle, setIconStyleState] = useState<MeteoconStyle>(getInitialIconStyle);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -113,6 +122,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     openMeteo: { status: 'operational' },
     reverseGeo: { status: 'operational' },
     geolocation: { status: 'pending' },
+    windy: { status: 'pending' },
   });
   
   const hasInitializedRef = useRef(false);
@@ -168,6 +178,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setIconStyleState(style);
     window.localStorage.setItem(ICON_STYLE_STORAGE_KEY, style);
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(UNITS_STORAGE_KEY, units);
+  }, [units]);
 
   const finishInitialization = useCallback(() => {
     setIsInitializing(false);
@@ -296,6 +310,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const setLocationBySuggestion = useCallback(({ name, lat, lon }: { name: string; lat: number; lon: number }) => {
+    if (name.trim() && Number.isFinite(lat) && Number.isFinite(lon)) {
+      setLocation({ name: name.trim(), lat, lon });
+      setError(null);
+    }
+  }, []);
+
   const refreshData = useCallback(() => {
     if (location.name || hasCoordinates(location)) {
       toast.info(t('Toasts.refreshingData') || 'Refreshing data...');
@@ -316,6 +337,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setUnits, 
       setIconStyle,
       setLocationByName, 
+      setLocationBySuggestion,
       setLocationByCoords, 
       refreshData,
       finishInitialization,

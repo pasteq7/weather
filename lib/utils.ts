@@ -1,5 +1,3 @@
-// C:\Dev\weather-v2\lib\utils.ts
-
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { WMO_CODES, TEMPERATURE_UNIT_CELSIUS, TEMPERATURE_UNIT_FAHRENHEIT, WIND_UNIT_KMH, WIND_UNIT_MPH } from './constants';

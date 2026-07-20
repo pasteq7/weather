@@ -35,8 +35,8 @@ A modern weather application built with React and Vite that provides real-time w
 
 1.  **Clone the repository:**
     ```sh
-    git clone https://github.com/pasteq7/weather-vite
-    cd weather-vite
+    git clone https://github.com/pasteq7/weather
+    cd weather
     ```
 
 2.  **Install dependencies:**

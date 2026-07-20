@@ -115,7 +115,7 @@ body,
   --card-foreground: #f7efff;
   --weather-surface: #1C2330;
   --weather-surface-hover: #34324dcc;
-  --popover: #29283df2;
+  --popover: #1C2330;
   --popover-foreground: #f7efff;
   --primary: #c28523;
   --primary-foreground: #1C2330;
@@ -415,12 +415,12 @@ body,
   }
 
   .today-weather-card__icon {
-    height: clamp(3.6rem, 12.5vh, 5.9rem) !important;
-    width: clamp(3.6rem, 12.5vh, 5.9rem) !important;
+    height: clamp(5.4rem, 18.75vh, 8.85rem) !important;
+    width: clamp(5.4rem, 18.75vh, 8.85rem) !important;
   }
 
   .today-weather-card__temperature {
-    font-size: clamp(2.2rem, 7vh, 3.25rem) !important;
+    font-size: clamp(3.3rem, 10.5vh, 4.875rem) !important;
   }
 
   .forecast-item__icon {
@@ -657,12 +657,12 @@ body,
   }
 
   .today-weather-card__icon {
-    height: 3.8rem !important;
-    width: 3.8rem !important;
+    height: 5.7rem !important;
+    width: 5.7rem !important;
   }
 
   .today-weather-card__temperature {
-    font-size: 2.35rem !important;
+    font-size: 3.5rem !important;
   }
 
   .today-weather-card__unit {
@@ -679,8 +679,8 @@ body,
   }
 
   .today-weather-card__range {
-    font-size: 0.62rem !important;
-    padding: 0.25rem 0.55rem !important;
+    font-size: 0.85rem !important;
+    padding: 0 !important;
   }
 
   .forecast-card__content {

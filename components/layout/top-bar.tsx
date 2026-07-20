@@ -1,7 +1,7 @@
 // components/layout/top-bar.tsx
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import { useFavorites } from '@/hooks/use-favorites';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sun, Moon, Star, Locate, X, ChevronDown, Clock, Settings, Search } from 'lucide-react';
+import { Sun, Moon, Star, Locate, X, ChevronDown, Clock, Settings, Search, Map, CloudSun } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { toast } from 'sonner';
@@ -28,6 +28,7 @@ import { Locale } from '@/i18n-config';
 import { useLanguage } from '@/app/context/LanguageProvider';
 import { cn } from '@/lib/utils';
 import type { MeteoconStyle } from '@/lib/meteocons';
+import { LocationSuggestion, searchLocationSuggestions } from '@/lib/api';
 
 interface SimplePosition {
   coords: {
@@ -36,7 +37,12 @@ interface SimplePosition {
   };
 }
 
-export default function TopBar() {
+interface TopBarProps {
+  activeView: 'weather' | 'radar';
+  onViewChange: (view: 'weather' | 'radar') => void;
+}
+
+export default function TopBar({ activeView, onViewChange }: TopBarProps) {
   const t = useTranslations();
   const { locale, setLocale } = useLanguage();
   const { theme, resolvedTheme, setTheme } = useTheme();
@@ -49,6 +55,7 @@ export default function TopBar() {
     setUnits,
     setIconStyle,
     setLocationByName,
+    setLocationBySuggestion,
     setLocationByCoords,
     refreshData,
     isInitializing,
@@ -58,6 +65,10 @@ export default function TopBar() {
   } = useAppContext();
 
   const [locationInput, setLocationInput] = useState('');
+  const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  const [isSearchingLocations, setIsSearchingLocations] = useState(false);
+  const suppressNextSuggestionSearchRef = useRef(false);
   const [isGeolocating, setIsGeolocating] = useState(false);
   const [currentTime, setCurrentTime] = useState<string | null>(null);
 
@@ -182,11 +193,81 @@ export default function TopBar() {
     setLocationInput(location.name || '');
   }, [location.name]);
 
+  useEffect(() => {
+    const query = locationInput.trim();
+    if (suppressNextSuggestionSearchRef.current) {
+      suppressNextSuggestionSearchRef.current = false;
+      setSuggestions([]);
+      setActiveSuggestionIndex(-1);
+      setIsSearchingLocations(false);
+      return;
+    }
+
+    if (query.length < 3) {
+      setSuggestions([]);
+      setActiveSuggestionIndex(-1);
+      setIsSearchingLocations(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setIsSearchingLocations(true);
+      try {
+        const results = await searchLocationSuggestions(query, locale, controller.signal);
+        if (!controller.signal.aborted) {
+          setSuggestions(results);
+          setActiveSuggestionIndex(-1);
+        }
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          console.error('Location suggestion search failed:', error);
+          setSuggestions([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsSearchingLocations(false);
+      }
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [locationInput, locale]);
+
+  const selectSuggestion = useCallback((suggestion: LocationSuggestion) => {
+    suppressNextSuggestionSearchRef.current = true;
+    setLocationInput(suggestion.label);
+    setSuggestions([]);
+    setActiveSuggestionIndex(-1);
+    setLocationBySuggestion({ name: suggestion.label, lat: suggestion.latitude, lon: suggestion.longitude });
+  }, [setLocationBySuggestion]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
+      selectSuggestion(suggestions[activeSuggestionIndex]);
+      return;
+    }
     const searchTerm = locationInput.trim();
     if (searchTerm) {
       setLocationByName(searchTerm);
+    }
+    setSuggestions([]);
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (suggestions.length === 0) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActiveSuggestionIndex(index => Math.min(index + 1, suggestions.length - 1));
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActiveSuggestionIndex(index => Math.max(index - 1, 0));
+    } else if (event.key === 'Escape') {
+      setSuggestions([]);
+      setActiveSuggestionIndex(-1);
     }
   };
 
@@ -218,7 +299,7 @@ export default function TopBar() {
   };
 
   return (
-    <div className="weather-top-bar flex w-full flex-col gap-2 sm:flex-row sm:items-center">
+    <div className="weather-top-bar relative z-50 flex w-full flex-col gap-2 sm:flex-row sm:items-center">
       {currentTime && (
         <div className="weather-top-bar__time weather-surface hidden items-center gap-1.5 whitespace-nowrap rounded-md border border-border/25 px-2.5 text-sm font-semibold tabular-nums text-muted-foreground backdrop-blur-sm md:flex md:h-9">
           <Clock className="h-3.5 w-3.5 text-chart-2" />
@@ -227,7 +308,7 @@ export default function TopBar() {
       )}
 
       <TooltipProvider>
-        <form onSubmit={handleSearch} className="weather-search-form weather-surface flex h-10 min-w-0 flex-1 items-center gap-1 rounded-md border border-border/40 shadow-sm shadow-black/5 backdrop-blur-md sm:h-9">
+        <form onSubmit={handleSearch} className="weather-search-form weather-surface relative flex h-10 min-w-0 flex-1 items-center gap-1 rounded-md border border-border/40 shadow-sm shadow-black/5 backdrop-blur-md sm:h-9">
           <Button className="h-10 w-10 rounded-r-none sm:h-9 sm:w-9" variant="ghost" size="icon" type="submit" aria-label={t('TopBar.searchPlaceholder')}>
             <Search className="h-4 w-4" />
           </Button>
@@ -237,37 +318,110 @@ export default function TopBar() {
             placeholder={t('TopBar.searchPlaceholder')}
             value={locationInput}
             onChange={(e) => setLocationInput(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            onBlur={() => {
+              setSuggestions([]);
+              setActiveSuggestionIndex(-1);
+            }}
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={suggestions.length > 0}
+            aria-controls="location-suggestions"
+            aria-activedescendant={activeSuggestionIndex >= 0 ? `location-suggestion-${activeSuggestionIndex}` : undefined}
           />
 
           <Popover>
             <PopoverTrigger asChild>
               <Button className="h-10 w-10 rounded-l-none sm:h-9 sm:w-9" variant="ghost" size="icon" aria-label={t('TopBar.favoritesTooltip')}><ChevronDown className="h-4 w-4" /></Button>
             </PopoverTrigger>
-            <PopoverContent className="w-60">
-              <div className="grid gap-4">
-                <h4 className="font-medium text-muted-foreground leading-none">{t('TopBar.favoritesTitle')}</h4>
+            <PopoverContent className="w-[min(22rem,calc(100vw-2rem))] p-2">
+              <div className="grid gap-1">
+                <h4 className="px-2 py-1.5 text-sm font-medium leading-none text-muted-foreground">{t('TopBar.favoritesTitle')}</h4>
                 {favorites.length > 0 ? (
-                  <ul className="grid gap-2">
+                  <ul className="grid max-h-60 gap-0.5 overflow-y-auto">
                     {favorites.map(fav => (
-                      <li key={fav} className="flex items-center justify-between">
-                        <Button variant="link" className="p-0 h-auto" onClick={() => handleFavoriteSelect(fav)}>{fav}</Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFavorite(fav)}><X className="h-4 w-4" /></Button>
+                      <li key={fav} className="flex min-w-0 items-center gap-1 rounded-md hover:bg-secondary/55">
+                        <Button
+                          variant="ghost"
+                          className="h-9 min-w-0 flex-1 justify-start truncate px-2 text-left font-medium"
+                          title={fav}
+                          onClick={() => handleFavoriteSelect(fav)}
+                        >
+                          {fav}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 shrink-0"
+                          aria-label={t('TopBar.removeFavorite', { location: fav })}
+                          title={t('TopBar.removeFavorite', { location: fav })}
+                          onClick={() => removeFavorite(fav)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-muted-foreground">{t('TopBar.noFavorites')}</p>
+                  <p className="px-2 py-1.5 text-sm text-muted-foreground">{t('TopBar.noFavorites')}</p>
                 )}
               </div>
             </PopoverContent>
           </Popover>
+
+          {(suggestions.length > 0 || isSearchingLocations) && (
+            <div
+              id="location-suggestions"
+              role="listbox"
+              className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-50 overflow-hidden rounded-md border border-border/60 bg-popover p-1 text-popover-foreground shadow-lg"
+            >
+              {isSearchingLocations && suggestions.length === 0 ? (
+                <p className="px-2 py-2 text-sm text-muted-foreground">{t('TopBar.searchingLocations')}</p>
+              ) : suggestions.map((suggestion, index) => (
+                <button
+                  key={`${suggestion.latitude}-${suggestion.longitude}`}
+                  id={`location-suggestion-${index}`}
+                  type="button"
+                  role="option"
+                  aria-selected={activeSuggestionIndex === index}
+                  className={cn(
+                    'flex w-full rounded-sm px-2 py-2 text-left text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                    activeSuggestionIndex === index && 'bg-accent text-accent-foreground'
+                  )}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => selectSuggestion(suggestion)}
+                >
+                  {suggestion.label}
+                </button>
+              ))}
+            </div>
+          )}
         </form>
 
         <div className={cn(
           "weather-top-bar__actions",
           "grid h-10 items-center gap-2 sm:flex sm:h-9 sm:justify-end",
-          isSearchableLocation ? "grid-cols-4" : "grid-cols-3"
+          isSearchableLocation ? "grid-cols-5" : "grid-cols-4"
         )}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                className={cn(
+                  'h-10 w-full sm:h-9 sm:w-9',
+                  activeView === 'radar' && '!bg-primary !text-primary-foreground hover:!bg-primary'
+                )}
+                type="button"
+                variant={activeView === 'radar' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => onViewChange(activeView === 'weather' ? 'radar' : 'weather')}
+                aria-label={activeView === 'weather' ? t('TopBar.showRadarTooltip') : t('TopBar.showWeatherTooltip')}
+              >
+                {activeView === 'weather' ? <Map className="h-4 w-4" /> : <CloudSun className="h-4 w-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent><p>{activeView === 'weather' ? t('TopBar.showRadarTooltip') : t('TopBar.showWeatherTooltip')}</p></TooltipContent>
+          </Tooltip>
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button className="h-10 w-full sm:h-9 sm:w-9" type="button" variant="outline" size="icon" onClick={() => handleGeolocate(false)} disabled={isGeolocating}>

@@ -5,13 +5,17 @@
   },
   "TopBar": {
     "searchPlaceholder": "Rechercher un lieu...",
+    "searchingLocations": "Recherche de lieux...",
     "myLocationTooltip": "Ma position",
     "gettingLocationTooltip": "Obtention de la position...",
     "favoritesTooltip": "Favoris",
     "favoritesTitle": "Favoris",
+    "removeFavorite": "Retirer {location} des favoris",
     "noFavorites": "Aucun favori pour le moment.",
     "addFavoriteTooltip": "Ajouter le lieu aux favoris",
     "toggleThemeTooltip": "Changer de thème",
+    "showRadarTooltip": "Afficher la carte radar",
+    "showWeatherTooltip": "Afficher le tableau météo",
     "changeLanguageTooltip": "Changer de langue",
     "settingsTooltip": "Reglages",
     "unitsLabel": "Unites",
@@ -123,10 +127,16 @@
     "geolocationApi": "Géolocalisation",
     "weatherApi": "Météo",
     "geocodingApi": "Géocodage",
+    "windyApi": "Radar Windy",
     "operational": "Opérationnel",
     "outage": "En panne",
     "pending": "En attente",
     "degradedTooltip": "Certaines données sont indisponibles pour ce lieu :"
+  },
+  "Radar": {
+    "title": "Radar en direct",
+    "iframeTitle": "Radar météo Windy en direct",
+    "defaultLocation": "Paris"
   },
   "ApiParams": {
     "wind_speed_10m": "Vitesse du vent",

@@ -7,15 +7,31 @@ import LoadingSkeleton from '@/app/Loading';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/layout/footer';
+import RadarMap from '@/components/features/radar-map';
 import { AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
-export default function HomePage() {
+interface HomePageProps {
+  activeView: 'weather' | 'radar';
+}
+
+export default function HomePage({ activeView }: HomePageProps) {
   const t = useTranslations();
   const { weatherData, units, isLoading, error, isInitializing, refreshData, reportError } = useAppContext();
 
   const showSkeleton = isInitializing || (isLoading && !weatherData);
+
+  if (activeView === 'radar') {
+    return (
+      <main className="min-h-0 overflow-hidden">
+        <div className="weather-radar-dashboard flex h-full min-h-0 flex-col gap-2.5 overflow-hidden pb-1 pr-1 min-[72rem]:pr-0">
+          <RadarMap />
+          <Footer activeView="radar" />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <>

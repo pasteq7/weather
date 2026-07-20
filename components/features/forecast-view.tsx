@@ -145,10 +145,10 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
   }), [t]);
 
   const { preferences, setPreferences } = useViewPreference(
-    `${type}-compact-v2`, 
+    `${type}-compact`, 
     { 
-      view: type === 'hourly' ? 'list' : 'chart', 
-      displayModes: ['temperature'] 
+      view: type === 'hourly' ? 'chart' : 'list', 
+      displayModes: type === 'hourly' ? ['temperature', 'rain'] : ['temperature'] 
     }
   );
   const { view, displayModes } = preferences;

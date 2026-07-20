@@ -5,13 +5,17 @@
   },
   "TopBar": {
     "searchPlaceholder": "Search for a location...",
+    "searchingLocations": "Searching locations...",
     "myLocationTooltip": "My Location",
     "gettingLocationTooltip": "Getting Location...",
     "favoritesTooltip": "Favorites",
     "favoritesTitle": "Favorites",
+    "removeFavorite": "Remove {location} from favorites",
     "noFavorites": "No favorites yet.",
     "addFavoriteTooltip": "Add to location to Favorites",
     "toggleThemeTooltip": "Toggle Theme",
+    "showRadarTooltip": "Show radar map",
+    "showWeatherTooltip": "Show weather dashboard",
     "changeLanguageTooltip": "Change language",
     "settingsTooltip": "Settings",
     "unitsLabel": "Units",
@@ -123,10 +127,16 @@
     "geolocationApi": "Geolocation",
     "weatherApi": "Weather",
     "geocodingApi": "Geocoding",
+    "windyApi": "Windy radar",
     "operational": "Operational",
     "outage": "Outage",
     "pending": "Pending",
     "degradedTooltip": "Some data is unavailable for this location:"
+  },
+  "Radar": {
+    "title": "Live radar",
+    "iframeTitle": "Windy live weather radar",
+    "defaultLocation": "Paris"
   },
   "ApiParams": {
     "wind_speed_10m": "Wind Speed",

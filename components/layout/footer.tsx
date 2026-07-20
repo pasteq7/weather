@@ -6,13 +6,22 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 
-export default function Footer() {
+interface FooterProps {
+  activeView?: 'weather' | 'radar';
+}
+
+export default function Footer({ activeView = 'weather' }: FooterProps) {
   const t = useTranslations('Footer');
   const { apiStatus } = useAppContext();
 
   // Determines the overall system status based on individual API statuses
   const getGeneralStatus = (): ApiStatus => {
-    const statuses = [apiStatus.geolocation, apiStatus.openMeteo, apiStatus.reverseGeo];
+    const statuses = [
+      apiStatus.geolocation,
+      apiStatus.openMeteo,
+      apiStatus.reverseGeo,
+      ...(activeView === 'radar' ? [apiStatus.windy] : []),
+    ];
     if (statuses.some(s => s.status === 'outage')) {
       return { status: 'outage' };
     }
@@ -63,6 +72,7 @@ export default function Footer() {
                   <DetailedStatus status={apiStatus.geolocation} label={t('geolocationApi')} />
                   <DetailedStatus status={apiStatus.openMeteo} label={t('weatherApi')} />
                   <DetailedStatus status={apiStatus.reverseGeo} label={t('geocodingApi')} />
+                  {activeView === 'radar' && <DetailedStatus status={apiStatus.windy} label={t('windyApi')} />}
                 </div>
               </TooltipContent>
             </Tooltip>
@@ -80,6 +90,15 @@ export default function Footer() {
             >
               Open-Meteo
             </a>
+            <span className="mx-1.5">·</span>
+            <a
+              href="https://www.windy.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground/75 underline hover:text-primary"
+            >
+              Windy
+            </a>
           </p>
           
           <p className="hidden xl:block whitespace-nowrap">
@@ -95,7 +114,7 @@ export default function Footer() {
           </p>
           
           <a
-            href="https://github.com/pasteq7/weather-vite" 
+            href="https://github.com/pasteq7/weather" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="flex-shrink-0 text-muted-foreground/75 hover:text-primary" 

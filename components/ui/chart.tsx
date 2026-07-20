@@ -1,5 +1,3 @@
-// C:\Dev\weather-v2\components\ui\chart.tsx
-
 "use client"
 
 import * as React from "react"

@@ -14,6 +14,7 @@ interface LanguageContextType {
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LANGUAGE_STORAGE_KEY = 'weather-language';
 
 interface LanguageProviderProps {
   children: ReactNode;
@@ -23,11 +24,17 @@ interface LanguageProviderProps {
 }
 
 export const LanguageProvider = ({ children, initialLocale, allMessages, timeZone }: LanguageProviderProps) => {
-  const [locale, setLocale] = useState<Locale>(initialLocale);
+  const [locale, setLocale] = useState<Locale>(() => {
+    if (typeof window === 'undefined') return initialLocale;
+
+    const savedLocale = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return savedLocale && savedLocale in allMessages ? savedLocale as Locale : initialLocale;
+  });
 
   const messages = allMessages[locale];
 
   useEffect(() => {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, locale);
     document.documentElement.lang = locale;
 
     const metadata = (messages as Messages).Metadata;

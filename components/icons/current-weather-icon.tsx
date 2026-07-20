@@ -34,7 +34,7 @@ const CurrentWeatherIcon: FC<CurrentWeatherIconProps> = ({ iconCode, className }
   }, [IconComponent]);
 
   return (
-    <div ref={iconRef} className={cn('text-primary', className)}>
+    <div ref={iconRef} className={cn('h-full w-full text-primary', className)}>
       <IconComponent className="h-full w-full" aria-hidden="true" focusable="false" />
     </div>
   );

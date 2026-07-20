@@ -34,8 +34,18 @@ type GeocodingResponse = {
     latitude?: number;
     longitude?: number;
     name?: string;
+    admin1?: string;
+    country?: string;
+    country_code?: string;
   }>;
 };
+
+export interface LocationSuggestion {
+  latitude: number;
+  longitude: number;
+  name: string;
+  label: string;
+}
 
 const fetchJson = async <T>(
   url: string,
@@ -116,6 +126,52 @@ export const getCoordinatesForCity = async (city: string) => {
   const name = result.name || cityName;
 
   return { latitude, longitude, name };
+};
+
+export const searchLocationSuggestions = async (
+  query: string,
+  language: string = 'en',
+  signal?: AbortSignal
+): Promise<LocationSuggestion[]> => {
+  const params = new URLSearchParams({
+    name: query.trim(),
+    count: '6',
+    language,
+    format: 'json',
+  });
+
+  let response: Response;
+  try {
+    response = await fetch(`${GEO_API_URL}?${params.toString()}`, { signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error;
+    throw new WeatherApiError('ERROR_FETCH_COORDINATES', { service: 'geocoding', reason: 'network' });
+  }
+
+  if (!response.ok) {
+    throw new WeatherApiError('ERROR_FETCH_COORDINATES', { status: response.status, service: 'geocoding', reason: 'http' });
+  }
+
+  let data: GeocodingResponse;
+  try {
+    data = await response.json() as GeocodingResponse;
+  } catch {
+    throw new WeatherApiError('ERROR_INVALID_RESPONSE', { service: 'geocoding', reason: 'parse' });
+  }
+
+  return (data.results ?? []).flatMap((result) => {
+    if (typeof result.latitude !== 'number' || typeof result.longitude !== 'number' || !result.name) return [];
+
+    const details = [result.admin1, result.country ?? result.country_code]
+      .filter((value, index, values) => Boolean(value) && values.indexOf(value) === index);
+
+    return [{
+      latitude: result.latitude,
+      longitude: result.longitude,
+      name: result.name,
+      label: [result.name, ...details].join(', '),
+    }];
+  });
 };
 
 export const getCityNameFromCoordinates = async (latitude: number, longitude: number): Promise<{name: string | null, ok: boolean}> => {
