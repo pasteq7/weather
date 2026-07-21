@@ -692,7 +692,7 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
               >
                 <div className="forecast-card__list-shell min-h-0 flex-1">
                   <div
-                    className="forecast-card__list flex h-full cursor-grab touch-pan-y snap-x snap-mandatory gap-1 overflow-x-auto overflow-y-hidden select-none"
+                    className="forecast-card__list flex h-full cursor-grab touch-auto snap-x snap-mandatory gap-1 overflow-x-auto overflow-y-hidden select-none"
                     onWheel={handleListWheel}
                     {...horizontalMouseDrag}
                   >
