@@ -14,12 +14,14 @@ export default function MobileHomePage({
   units,
   onGeolocate,
   onSearch,
+  onSuggestion,
 }: {
   data: WeatherData;
   labels: MobileLabels;
   units: 'metric' | 'imperial';
   onGeolocate: () => void;
   onSearch: (location: string) => void;
+  onSuggestion: (suggestion: { name: string; lat: number; lon: number }) => void;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -53,6 +55,7 @@ export default function MobileHomePage({
         labels={labels}
         onLocate={onGeolocate}
         onSearch={onSearch}
+        onSuggestion={onSuggestion}
       />
 
       <section className="mobile-current">

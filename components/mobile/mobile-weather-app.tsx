@@ -26,6 +26,7 @@ export default function MobileWeatherApp() {
     setApiStatus,
     setLocationByCoords,
     setLocationByName,
+    setLocationBySuggestion,
   } = useAppContext();
   const [activeView, setActiveView] = useState<MobileView>('home');
   const labels = useMemo(() => getLabels(locale), [locale]);
@@ -77,12 +78,13 @@ export default function MobileWeatherApp() {
           labels={labels}
           onLocate={handleGeolocate}
           onSearch={setLocationByName}
+          onSuggestion={setLocationBySuggestion}
         />
         {error ? <AlertTriangle /> : <span className="mobile-loader" />}
         <h1>{error?.title || 'Weather'}</h1>
         <p>{error?.message || 'Finding your local forecast…'}</p>
         {error?.canRetry && (
-          <button type="button" onClick={refreshData}>
+          <button className="mobile-empty-state__retry" type="button" onClick={refreshData}>
             <RefreshCw /> Retry
           </button>
         )}
@@ -104,6 +106,7 @@ export default function MobileWeatherApp() {
         units={units}
         onGeolocate={handleGeolocate}
         onSearch={setLocationByName}
+        onSuggestion={setLocationBySuggestion}
       />
     );
   }

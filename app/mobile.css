@@ -30,8 +30,13 @@
     display: grid;
     font-family: "Source Sans 3", "Segoe UI", sans-serif;
     grid-template-rows: minmax(0, 1fr) auto;
+    height: 100vh;
     height: 100dvh;
+    inset: 0;
+    min-height: 0;
     overflow: hidden;
+    position: fixed;
+    width: 100%;
   }
 
   .mobile-weather-app button {
@@ -67,6 +72,8 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
     height: 2.65rem;
     padding-left: 0.72rem;
+    position: relative;
+    z-index: 10;
   }
 
   .mobile-search__submit {
@@ -116,6 +123,52 @@
   .mobile-search > button:last-child svg {
     height: 1.15rem;
     width: 1.15rem;
+  }
+
+  .mobile-search__suggestions {
+    background: var(--popover);
+    border: 1px solid var(--mobile-line);
+    border-radius: 0.55rem;
+    box-shadow: 0 0.75rem 1.75rem rgb(0 0 0 / 0.2);
+    color: var(--popover-foreground);
+    left: -1px;
+    max-height: min(15rem, calc(100dvh - 9rem));
+    overflow-y: auto;
+    padding: 0.25rem;
+    position: absolute;
+    right: -1px;
+    top: calc(100% + 0.35rem);
+    z-index: 40;
+  }
+
+  .mobile-search__suggestions p {
+    color: var(--mobile-muted);
+    font-size: 0.78rem;
+    margin: 0;
+    padding: 0.65rem 0.7rem;
+    text-align: left;
+  }
+
+  .mobile-search .mobile-search__suggestion {
+    background: transparent;
+    border: 0;
+    border-radius: 0.4rem;
+    color: var(--popover-foreground);
+    display: block;
+    font: inherit;
+    font-size: 0.8rem;
+    height: auto;
+    line-height: 1.3;
+    padding: 0.62rem 0.65rem;
+    text-align: left;
+    width: 100%;
+  }
+
+  .mobile-search .mobile-search__suggestion:hover,
+  .mobile-search .mobile-search__suggestion:focus-visible,
+  .mobile-search .mobile-search__suggestion[data-active="true"] {
+    background: var(--secondary);
+    color: var(--secondary-foreground);
   }
 
   .mobile-current {
@@ -659,6 +712,7 @@
     border-top: 1px solid var(--mobile-line);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
+    min-height: 3.75rem;
     padding: 0.42rem 0 max(0.45rem, env(safe-area-inset-bottom));
     position: relative;
     z-index: 20;
@@ -720,7 +774,7 @@
     margin-top: 0.35rem;
   }
 
-  .mobile-empty-state button {
+  .mobile-empty-state .mobile-empty-state__retry {
     align-items: center;
     background: var(--mobile-accent);
     border: 0;
@@ -733,7 +787,7 @@
     padding: 0.55rem 0.85rem;
   }
 
-  .mobile-empty-state button svg {
+  .mobile-empty-state .mobile-empty-state__retry svg {
     height: 1rem;
     width: 1rem;
   }
@@ -752,8 +806,17 @@
   }
 
   @media (max-height: 43rem) {
+    .mobile-page {
+      padding-bottom: 0.65rem;
+      padding-top: max(0.55rem, env(safe-area-inset-top));
+    }
+
+    .mobile-search {
+      height: 2.45rem;
+    }
+
     .mobile-current {
-      padding-top: 0.6rem;
+      padding: 0.55rem 0.15rem 0.45rem;
     }
 
     .mobile-current__hero {
@@ -771,6 +834,25 @@
 
     .mobile-metric-card {
       min-height: 3.25rem;
+    }
+
+    .mobile-daily-preview {
+      margin-top: 0.5rem;
+      padding: 0.55rem 0.65rem;
+    }
+
+    .mobile-daily-preview__icon {
+      height: 2.25rem;
+      width: 2.25rem;
+    }
+
+    .mobile-bottom-nav {
+      min-height: 3.45rem;
+      padding-top: 0.28rem;
+    }
+
+    .mobile-bottom-nav__item {
+      min-height: 2.55rem;
     }
   }
 }

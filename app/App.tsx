@@ -50,7 +50,14 @@ export default function App() {
           </div>
           <MobileWeatherApp />
         </AppProvider>
-        <Toaster richColors />
+        <Toaster
+          richColors
+          mobileOffset={{
+            bottom: 'calc(4.75rem + env(safe-area-inset-bottom))',
+            left: '0.75rem',
+            right: '0.75rem',
+          }}
+        />
       </ThemeProvider>
     </LanguageProvider>
   );

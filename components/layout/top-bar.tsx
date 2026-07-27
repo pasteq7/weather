@@ -70,6 +70,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
   const [isSearchingLocations, setIsSearchingLocations] = useState(false);
   const suppressNextSuggestionSearchRef = useRef(false);
   const [isGeolocating, setIsGeolocating] = useState(false);
+  const isGeolocatingRef = useRef(false);
   const [currentTime, setCurrentTime] = useState<string | null>(null);
 
   const isSearchableLocation = location.name &&
@@ -115,8 +116,9 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
   }, [weatherData?.timezone, units]);
 
   const handleGeolocate = useCallback(async (isAuto = false) => {
-    if (isGeolocating) return;
+    if (isGeolocatingRef.current) return;
 
+    isGeolocatingRef.current = true;
     setIsGeolocating(true);
 
     const promise = async (): Promise<SimplePosition> => {
@@ -157,6 +159,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
         setApiStatus('geolocation', { status: 'operational' });
         reportError(null);
         setLocationByCoords(position.coords.latitude, position.coords.longitude);
+        isGeolocatingRef.current = false;
         setIsGeolocating(false);
         return t('Toasts.locationFound');
       },
@@ -164,6 +167,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
         if (isAuto) finishInitialization();
         setApiStatus('geolocation', { status: 'outage' });
         console.error("Geolocation failed:", err);
+        isGeolocatingRef.current = false;
         setIsGeolocating(false);
         if (err.message.includes('denied') || err.message.includes('permission')) {
           const message = t('Toasts.locationDenied');
@@ -181,7 +185,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
         return message;
       },
     });
-  }, [isGeolocating, finishInitialization, setLocationByCoords, t, setApiStatus, reportError]);
+  }, [finishInitialization, setLocationByCoords, t, setApiStatus, reportError]);
 
   useEffect(() => {
     if (isInitializing) {
