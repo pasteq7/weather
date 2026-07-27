@@ -50,6 +50,13 @@ export default function TodayWeatherCard({ weatherData, units, location }: Today
   const [feelsLikeTemp] = formatTemperature(current.apparent_temperature ?? current.temperature_2m, units);
   const [highTemp] = formatTemperature(weatherData.daily.temperature_2m_max[0], units);
   const [lowTemp] = formatTemperature(weatherData.daily.temperature_2m_min[0], units);
+  const estimatedHigh = weatherData.daily.temperature_2m_max[0];
+  const estimatedLow = weatherData.daily.temperature_2m_min[0];
+  const currentTemperatureState = current.temperature_2m >= estimatedHigh
+    ? 'today-weather-card__temperature--high'
+    : current.temperature_2m <= estimatedLow
+      ? 'today-weather-card__temperature--low'
+      : '';
 
   const displayLocation = (location || weatherData.name || t('Weather.unknownLocation'))
     .split(',', 1)[0]
@@ -83,7 +90,7 @@ export default function TodayWeatherCard({ weatherData, units, location }: Today
             </div>
           </div>
           <div className="flex min-w-0 flex-col items-start text-left max-[20rem]:items-center max-[20rem]:text-center">
-            <p className="today-weather-card__temperature tabular-nums text-[4.25rem] font-normal leading-none text-card-foreground sm:text-[4.75rem] min-[72rem]:text-[4.5rem]">
+            <p className={`today-weather-card__temperature ${currentTemperatureState} tabular-nums text-[4.25rem] font-normal leading-none text-card-foreground sm:text-[4.75rem] min-[72rem]:text-[4.5rem]`}>
               {temp}
               <span className="today-weather-card__unit align-top text-xl font-medium text-muted-foreground/75 sm:text-2xl">{tempUnit}</span>
             </p>

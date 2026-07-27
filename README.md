@@ -7,11 +7,12 @@ A responsive weather dashboard built with React and Vite. Search for a place or 
 ## What it does
 
 - Shows current temperature, feels-like temperature, daily high/low, humidity, wind, pressure, visibility, sunrise, and sunset.
-- Provides a 24-hour hourly forecast and a 14-day daily forecast, each available as a chart or a compact list.
+- Provides a 24-hour hourly forecast and a 14-day daily forecast. Desktop supports chart and compact-list views; mobile offers an hourly temperature chart with optional rain and wind lines, plus a focused daily list.
 - Searches Open-Meteo locations with keyboard-friendly suggestions and lets you save favorite places.
 - Includes an embedded Windy precipitation radar centered on the selected location.
-- Supports English and French, metric and imperial units, light and dark themes, and three weather-icon styles.
-- Persists display preferences, the active view, theme, favorite locations, and the last selected location in the browser.
+- Has a dedicated mobile bottom navigation and Settings page for language, units, theme (light, dark, or system), and weather-icon style.
+- Supports English and French, metric and imperial units, light, dark, and system themes, and three weather-icon styles.
+- Persists units, icon style, language, theme, favorite locations, and the desktop dashboard/radar view preference in the browser.
 
 ## Data and services
 

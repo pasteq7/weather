@@ -5,6 +5,7 @@ import { AppProvider } from '@/app/context/AppContext';
 import { LanguageProvider } from '@/app/context/LanguageProvider';
 import TopBar from '@/components/layout/top-bar';
 import HomePage from '@/app/HomePage';
+import MobileWeatherApp from '@/components/mobile/mobile-weather-app';
 import { Locale, routing } from '@/i18n-config';
 import enMessages from '@/messages/en.json';
 import frMessages from '@/messages/fr.json';
@@ -41,10 +42,13 @@ export default function App() {
         disableTransitionOnChange
       >
         <AppProvider>
-          <div className="weather-shell mx-auto grid h-dvh max-h-dvh w-full max-w-[98rem] grid-rows-[auto_minmax(0,1fr)] gap-2 overflow-hidden p-2 sm:p-3">
-            <TopBar activeView={activeView} onViewChange={setActiveView} />
-            <HomePage activeView={activeView} />
+          <div className="desktop-weather-app">
+            <div className="weather-shell mx-auto grid h-dvh max-h-dvh w-full max-w-[98rem] grid-rows-[auto_minmax(0,1fr)] gap-2 overflow-hidden p-2 sm:p-3">
+              <TopBar activeView={activeView} onViewChange={setActiveView} />
+              <HomePage activeView={activeView} />
+            </div>
           </div>
+          <MobileWeatherApp />
         </AppProvider>
         <Toaster richColors />
       </ThemeProvider>

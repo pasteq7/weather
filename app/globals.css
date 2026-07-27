@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./mobile.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -287,6 +288,14 @@ body,
 }
 
 .today-weather-card__temp-high {
+  color: var(--primary);
+}
+
+.today-weather-card__temperature--low {
+  color: var(--chart-2);
+}
+
+.today-weather-card__temperature--high {
   color: var(--primary);
 }
 
