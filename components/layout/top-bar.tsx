@@ -308,8 +308,8 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
       )}
 
       <TooltipProvider>
-        <form onSubmit={handleSearch} className="weather-search-form weather-surface relative flex h-10 min-w-0 flex-1 items-center gap-1 rounded-md border border-border/40 shadow-sm shadow-black/5 backdrop-blur-md sm:h-9">
-          <Button className="h-10 w-10 rounded-r-none sm:h-9 sm:w-9" variant="ghost" size="icon" type="submit" aria-label={t('TopBar.searchPlaceholder')}>
+        <form onSubmit={handleSearch} className="weather-search-form weather-surface relative flex h-10 min-w-0 flex-1 items-center overflow-hidden rounded-md border border-border/40 shadow-sm shadow-black/5 backdrop-blur-md sm:h-9">
+          <Button className="weather-search-form__button h-10 w-10 rounded-none sm:h-9 sm:w-9" variant="ghost" size="icon" type="submit" aria-label={t('TopBar.searchPlaceholder')}>
             <Search className="h-4 w-4" />
           </Button>
 
@@ -332,7 +332,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
 
           <Popover>
             <PopoverTrigger asChild>
-              <Button className="h-10 w-10 rounded-l-none sm:h-9 sm:w-9" variant="ghost" size="icon" aria-label={t('TopBar.favoritesTooltip')}><ChevronDown className="h-4 w-4" /></Button>
+              <Button className="weather-search-form__button h-10 w-10 rounded-none sm:h-9 sm:w-9" variant="ghost" size="icon" aria-label={t('TopBar.favoritesTooltip')}><ChevronDown className="h-4 w-4" /></Button>
             </PopoverTrigger>
             <PopoverContent className="w-[min(22rem,calc(100vw-2rem))] p-2">
               <div className="grid gap-1">
@@ -424,7 +424,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button className="h-10 w-full sm:h-9 sm:w-9" type="button" variant="outline" size="icon" onClick={() => handleGeolocate(false)} disabled={isGeolocating}>
+              <Button className="weather-action-button h-10 w-full sm:h-9 sm:w-9" type="button" variant="ghost" size="icon" onClick={() => handleGeolocate(false)} disabled={isGeolocating}>
                 <Locate className={`h-4 w-4 ${isGeolocating ? 'animate-spin' : ''}`} />
               </Button>
             </TooltipTrigger>

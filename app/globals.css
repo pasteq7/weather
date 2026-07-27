@@ -368,6 +368,34 @@ body,
   background-color: var(--weather-surface-hover);
 }
 
+.weather-search-form [data-slot="input"] {
+  min-width: 0;
+}
+
+.weather-search-form__button,
+.weather-search-form__button:hover,
+.weather-search-form__button:focus-visible,
+.weather-search-form__button:disabled,
+.weather-action-button,
+.weather-action-button:hover,
+.weather-action-button:focus-visible,
+.weather-action-button:disabled {
+  background-color: transparent !important;
+  color: var(--primary) !important;
+}
+
+.weather-search-form__button:first-of-type {
+  border-right: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+}
+
+.weather-search-form__button:last-of-type {
+  border-left: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+}
+
+.weather-action-button {
+  border: 1px solid color-mix(in srgb, var(--border) 58%, transparent) !important;
+}
+
 @container (max-width: 25rem) {
   .today-weather-card__title {
     font-size: 1.5rem;
