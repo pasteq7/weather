@@ -97,6 +97,7 @@
     "minMax": "Min / Max",
     "currentLocation": "Current Location",
     "unknownLocation": "Unknown Location",
+    "findingLocalForecast": "Finding your local forecast…",
     "noLocationTitle": "Choose a location",
     "noLocationDescription": "Search for a city or use your current location from the toolbar."
   },

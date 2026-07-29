@@ -120,11 +120,11 @@ export default function MobileWeatherApp() {
           onSuggestion={setLocationBySuggestion}
         />
         {error ? <AlertTriangle /> : <span className="mobile-loader" />}
-        <h1>{error?.title || 'Weather'}</h1>
-        <p>{error?.message || 'Finding your local forecast…'}</p>
+        <h1>{error?.title || t('Metadata.title')}</h1>
+        <p>{error?.message || t('Weather.findingLocalForecast')}</p>
         {error?.canRetry && (
           <button className="mobile-empty-state__retry" type="button" onClick={refreshData}>
-            <RefreshCw /> Retry
+            <RefreshCw /> {t('Errors.retry')}
           </button>
         )}
       </div>

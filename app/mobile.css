@@ -825,7 +825,11 @@
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     min-height: calc(4.45rem + env(safe-area-inset-bottom));
-    padding: 0.62rem 0.15rem max(0.5rem, env(safe-area-inset-bottom));
+    padding:
+      0.62rem
+      max(0.15rem, env(safe-area-inset-right))
+      max(0.5rem, env(safe-area-inset-bottom))
+      max(0.15rem, env(safe-area-inset-left));
     position: relative;
     z-index: 20;
   }

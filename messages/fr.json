@@ -97,6 +97,7 @@
     "minMax": "Min / Max",
     "currentLocation": "Position actuelle",
     "unknownLocation": "Lieu inconnu",
+    "findingLocalForecast": "Recherche de vos prévisions météo locales…",
     "noLocationTitle": "Choisir un lieu",
     "noLocationDescription": "Recherchez une ville ou utilisez votre position depuis la barre d'outils."
   },

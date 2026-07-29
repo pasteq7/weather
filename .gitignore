@@ -17,6 +17,10 @@
 /build
 /dist
 
+# generated native projects and mobile build artifacts
+/android/
+*.aab
+
 # misc
 .DS_Store
 *.pem
@@ -36,6 +40,5 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-codebase.txt
-extract_codebase.py
+
 data/400Kcities.json
