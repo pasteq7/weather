@@ -119,7 +119,10 @@ export default function MobileSearch({
       <input
         aria-label={labels.search}
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) => {
+          suppressNextSearchRef.current = false;
+          setQuery(event.target.value);
+        }}
         onKeyDown={handleKeyDown}
         placeholder={labels.search}
         autoComplete="off"

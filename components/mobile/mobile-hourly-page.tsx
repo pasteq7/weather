@@ -17,7 +17,7 @@ export default function MobileHourlyPage({
   onBack: () => void;
 }) {
   const locale = useLocale();
-  const [visibleSeries, setVisibleSeries] = useState({ rain: false, wind: false });
+  const [visibleSeries, setVisibleSeries] = useState({ rain: true, wind: false });
   const start = Math.max(0, data.hourly.time.findIndex((time) => time >= data.current.time));
   const hours = data.hourly.time.slice(start, start + 24).map((time, index) => ({
     time,
@@ -41,7 +41,7 @@ export default function MobileHourlyPage({
   ];
 
   return (
-    <div className="mobile-page mobile-page--detail">
+    <div className="mobile-page mobile-page--detail mobile-page--hourly">
       <MobilePageHeader title={labels.hourly} backLabel={labels.back} onBack={onBack} />
 
       <section className="mobile-hourly-chart">
@@ -72,7 +72,7 @@ export default function MobileHourlyPage({
         </div>
       </section>
 
-      <section className="mobile-panel mobile-hour-strip">
+      <section className="mobile-panel mobile-hour-strip" data-swipe-ignore="true">
         {hours.filter((_, index) => index % 3 === 0).slice(0, 6).map((hour) => (
           <article key={hour.time}>
             <time>{formatHour(hour.time, data.timezone, locale)}</time>

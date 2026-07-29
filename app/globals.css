@@ -390,7 +390,14 @@ body,
 .weather-action-button:focus-visible,
 .weather-action-button:disabled {
   background-color: transparent !important;
-  color: var(--primary) !important;
+  color: var(--muted-foreground) !important;
+}
+
+.weather-search-form__button:hover,
+.weather-search-form__button:focus-visible,
+.weather-action-button:hover,
+.weather-action-button:focus-visible {
+  color: var(--foreground) !important;
 }
 
 .weather-search-form__button:first-of-type {
@@ -403,6 +410,17 @@ body,
 
 .weather-action-button {
   border: 1px solid color-mix(in srgb, var(--border) 58%, transparent) !important;
+}
+
+.weather-action-button--active,
+.weather-action-button--active:hover,
+.weather-action-button--active:focus-visible,
+.weather-action-button--active:disabled {
+  color: var(--primary) !important;
+}
+
+.weather-top-bar--skeleton .weather-skeleton {
+  --skeleton-delay: -360ms;
 }
 
 @container (max-width: 25rem) {

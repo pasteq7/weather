@@ -125,8 +125,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     windy: { status: 'pending' },
   });
   
-  const hasInitializedRef = useRef(false);
-  const isFirstRender = useRef(true);
   const activeFetchIdRef = useRef(0);
 
   const setApiStatus = useCallback((service: keyof ApiStatuses, status: ApiStatus) => {
@@ -185,13 +183,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const finishInitialization = useCallback(() => {
     setIsInitializing(false);
-    hasInitializedRef.current = true;
-  }, []);
-
-  const shouldAutoGeolocate = isInitializing && !hasInitializedRef.current && isFirstRender.current && !location.name && !hasCoordinates(location);
-
-  useEffect(() => {
-    isFirstRender.current = false;
   }, []);
 
   const fetchAndSetWeather = useCallback(async (currentLocation: Location, currentUnits: 'metric' | 'imperial') => {
@@ -290,12 +281,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [location, units, fetchAndSetWeather]);
 
-  useEffect(() => {
-    if (isInitializing && hasInitializedRef.current && (location.name || hasCoordinates(location))) {
-      finishInitialization();
-    }
-  }, [isInitializing, location, finishInitialization]);
-  
   const setLocationByName = useCallback((name: string) => {
     if (name && name.trim()) {
       setLocation({ name: name.trim(), lat: null, lon: null });
@@ -332,7 +317,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       weatherData, 
       isLoading, 
       error, 
-      isInitializing: shouldAutoGeolocate,
+      isInitializing,
       apiStatus,
       setUnits, 
       setIconStyle,

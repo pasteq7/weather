@@ -29,7 +29,7 @@ export default function MobileNavigation({
           onClick={() => onChange(id)}
           aria-current={activeView === id ? 'page' : undefined}
         >
-          <Icon aria-hidden="true" />
+          <span className="mobile-bottom-nav__icon"><Icon aria-hidden="true" /></span>
           <span>{labels[label]}</span>
         </button>
       ))}

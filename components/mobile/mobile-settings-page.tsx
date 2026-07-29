@@ -1,12 +1,13 @@
-import { Check, Languages, Monitor, Moon, Palette, Sun, Thermometer } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Languages, Monitor, Moon, Palette, SlidersHorizontal, Sun, Thermometer } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useAppContext } from '@/app/context/AppContext';
 import { useLanguage } from '@/app/context/LanguageProvider';
 import type { Locale } from '@/i18n-config';
+import type { MeteoconStyle } from '@/lib/meteocons';
 import MobilePageHeader from './mobile-page-header';
 import type { MobileLabels } from './mobile-types';
-import type { MeteoconStyle } from '@/lib/meteocons';
 
 const iconStyles: MeteoconStyle[] = ['line', 'fill', 'monochrome'];
 
@@ -28,65 +29,92 @@ export default function MobileSettingsPage({
   ] as const;
 
   return (
-    <div className="mobile-page mobile-page--detail">
+    <div className="mobile-page mobile-page--detail mobile-page--settings">
       <MobilePageHeader title={labels.settings} backLabel={labels.back} onBack={onBack} />
-      <section className="mobile-settings-section">
-        <div className="mobile-settings-section__title">
-          <Thermometer aria-hidden="true" />
-          <h2>{t('unitsLabel')}</h2>
-        </div>
-        <div className="mobile-settings-options" role="radiogroup" aria-label={t('unitsLabel')}>
-          <button type="button" data-active={units === 'metric'} onClick={() => setUnits('metric')} role="radio" aria-checked={units === 'metric'}>
-            {t('celsiusTooltip')}<Check aria-hidden="true" />
-          </button>
-          <button type="button" data-active={units === 'imperial'} onClick={() => setUnits('imperial')} role="radio" aria-checked={units === 'imperial'}>
-            {t('fahrenheitTooltip')}<Check aria-hidden="true" />
-          </button>
-        </div>
-      </section>
 
-      <section className="mobile-settings-section">
-        <div className="mobile-settings-section__title">
-          <Sun aria-hidden="true" />
-          <h2>{locale === 'fr' ? 'Thème' : 'Theme'}</h2>
+      <div className="mobile-settings-intro">
+        <span><SlidersHorizontal aria-hidden="true" /></span>
+        <div>
+          <h2>{locale === 'fr' ? 'Votre expérience météo' : 'Your weather experience'}</h2>
+          <p>{locale === 'fr' ? 'Personnalisez rapidement l’affichage de l’application.' : 'Quickly tailor how the app looks and feels.'}</p>
         </div>
-        <div className="mobile-settings-options" role="radiogroup" aria-label={locale === 'fr' ? 'Thème' : 'Theme'}>
-          {themeOptions.map(({ value, label, icon: Icon }) => (
-            <button key={value} type="button" data-active={theme === value} onClick={() => setTheme(value)} role="radio" aria-checked={theme === value}>
-              <span className="mobile-settings-option__label"><Icon aria-hidden="true" />{label}</span><Check aria-hidden="true" />
-            </button>
-          ))}
-        </div>
-      </section>
+      </div>
 
-      <section className="mobile-settings-section">
-        <div className="mobile-settings-section__title">
-          <Languages aria-hidden="true" />
-          <h2>{t('languageLabel')}</h2>
-        </div>
-        <div className="mobile-settings-options" role="radiogroup" aria-label={t('languageLabel')}>
-          <button type="button" data-active={locale === 'en'} onClick={() => setLocale('en' as Locale)} role="radio" aria-checked={locale === 'en'}>
-            {t('english')}<Check aria-hidden="true" />
-          </button>
-          <button type="button" data-active={locale === 'fr'} onClick={() => setLocale('fr' as Locale)} role="radio" aria-checked={locale === 'fr'}>
-            {t('french')}<Check aria-hidden="true" />
-          </button>
-        </div>
-      </section>
+      <div className="mobile-settings-list">
+        <SettingGroup icon={Thermometer} title={t('unitsLabel')}>
+          <div className="mobile-settings-options mobile-settings-options--two" role="radiogroup" aria-label={t('unitsLabel')}>
+            <SettingOption active={units === 'metric'} label={t('celsiusTooltip')} onClick={() => setUnits('metric')} />
+            <SettingOption active={units === 'imperial'} label={t('fahrenheitTooltip')} onClick={() => setUnits('imperial')} />
+          </div>
+        </SettingGroup>
 
-      <section className="mobile-settings-section">
-        <div className="mobile-settings-section__title">
-          <Palette aria-hidden="true" />
-          <h2>{t('iconStyleLabel')}</h2>
-        </div>
-        <div className="mobile-settings-options" role="radiogroup" aria-label={t('iconStyleLabel')}>
-          {iconStyles.map((style) => (
-            <button key={style} type="button" data-active={iconStyle === style} onClick={() => setIconStyle(style)} role="radio" aria-checked={iconStyle === style}>
-              {style === 'line' ? t('iconStyleLine') : style === 'fill' ? t('iconStyleFill') : t('iconStyleMonochrome')}<Check aria-hidden="true" />
-            </button>
-          ))}
-        </div>
-      </section>
+        <SettingGroup icon={Sun} title={locale === 'fr' ? 'Thème' : 'Theme'}>
+          <div className="mobile-settings-options" role="radiogroup" aria-label={locale === 'fr' ? 'Thème' : 'Theme'}>
+            {themeOptions.map(({ value, label, icon: Icon }) => (
+              <SettingOption active={theme === value} icon={Icon} key={value} label={label} onClick={() => setTheme(value)} />
+            ))}
+          </div>
+        </SettingGroup>
+
+        <SettingGroup icon={Languages} title={t('languageLabel')}>
+          <div className="mobile-settings-options mobile-settings-options--two" role="radiogroup" aria-label={t('languageLabel')}>
+            <SettingOption active={locale === 'en'} label={t('english')} onClick={() => setLocale('en' as Locale)} />
+            <SettingOption active={locale === 'fr'} label={t('french')} onClick={() => setLocale('fr' as Locale)} />
+          </div>
+        </SettingGroup>
+
+        <SettingGroup icon={Palette} title={t('iconStyleLabel')}>
+          <div className="mobile-settings-options" role="radiogroup" aria-label={t('iconStyleLabel')}>
+            {iconStyles.map((style) => (
+              <SettingOption
+                active={iconStyle === style}
+                key={style}
+                label={style === 'line' ? t('iconStyleLine') : style === 'fill' ? t('iconStyleFill') : t('iconStyleMonochrome')}
+                onClick={() => setIconStyle(style)}
+              />
+            ))}
+          </div>
+        </SettingGroup>
+      </div>
     </div>
+  );
+}
+
+function SettingGroup({
+  children,
+  icon: Icon,
+  title,
+}: {
+  children: ReactNode;
+  icon: typeof Thermometer;
+  title: string;
+}) {
+  return (
+    <section className="mobile-settings-row">
+      <div className="mobile-settings-row__title">
+        <Icon aria-hidden="true" />
+        <h2>{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function SettingOption({
+  active,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon?: typeof Thermometer;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" data-active={active} onClick={onClick} role="radio" aria-checked={active}>
+      {Icon && <Icon aria-hidden="true" />}
+      <span>{label}</span>
+    </button>
   );
 }

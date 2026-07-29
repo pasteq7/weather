@@ -31,6 +31,7 @@
     font-family: "Source Sans 3", "Segoe UI", sans-serif;
     grid-template-rows: minmax(0, 1fr) auto;
     height: 100vh;
+    height: 100svh;
     height: 100dvh;
     inset: 0;
     min-height: 0;
@@ -47,9 +48,35 @@
     min-height: 0;
     overflow: hidden;
     position: relative;
+    touch-action: pan-y;
+  }
+
+  .mobile-page-transition {
+    height: 100%;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .mobile-page-transition[data-direction="left"] {
+    animation: mobile-page-enter-left 180ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .mobile-page-transition[data-direction="right"] {
+    animation: mobile-page-enter-right 180ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  @keyframes mobile-page-enter-left {
+    from { opacity: 0.45; transform: translateX(1rem); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes mobile-page-enter-right {
+    from { opacity: 0.45; transform: translateX(-1rem); }
+    to { opacity: 1; transform: translateX(0); }
   }
 
   .mobile-page {
+    box-sizing: border-box;
     height: 100%;
     min-height: 0;
     overflow-x: hidden;
@@ -57,6 +84,17 @@
     overscroll-behavior: contain;
     padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem 1rem;
     scrollbar-width: none;
+  }
+
+  .mobile-page--home {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-page--hourly,
+  .mobile-page--daily {
+    display: flex;
+    flex-direction: column;
   }
 
   .mobile-page::-webkit-scrollbar {
@@ -172,6 +210,10 @@
   }
 
   .mobile-current {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    min-height: 10.5rem;
     padding: 1rem 0.15rem 0.8rem;
   }
 
@@ -209,11 +251,14 @@
   .mobile-current__hero {
     align-items: center;
     display: grid;
+    flex: 1;
     gap: 1.2rem;
     grid-template-columns: minmax(6.5rem, 0.8fr) minmax(8rem, 1fr);
     justify-content: center;
     margin: 0.6rem auto 0.2rem;
     max-width: 20rem;
+    min-height: 7rem;
+    width: 100%;
   }
 
   .mobile-current__icon {
@@ -350,77 +395,127 @@
     color: var(--mobile-accent);
   }
 
-  .mobile-settings-section {
-    background: var(--mobile-card);
-    border: 1px solid var(--mobile-line);
-    border-radius: 0.65rem;
-    margin-bottom: 0.75rem;
-    padding: 0.8rem;
+  .mobile-page--settings {
+    padding-bottom: 0.8rem;
   }
 
-  .mobile-settings-section__title {
+  .mobile-settings-intro {
     align-items: center;
     display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.65rem;
+    gap: 0.8rem;
+    margin: 0.1rem 0 0.85rem;
+    padding: 0 0.2rem;
   }
 
-  .mobile-settings-section__title svg {
+  .mobile-settings-intro > span {
+    align-items: center;
+    background: color-mix(in srgb, var(--primary) 14%, transparent);
+    border-radius: 0.75rem;
     color: var(--mobile-accent);
-    height: 1.05rem;
-    width: 1.05rem;
+    display: flex;
+    flex: 0 0 auto;
+    height: 2.75rem;
+    justify-content: center;
+    width: 2.75rem;
   }
 
-  .mobile-settings-section__title h2 {
-    font-size: 0.9rem;
-    font-weight: 600;
+  .mobile-settings-intro svg {
+    height: 1.3rem;
+    width: 1.3rem;
+  }
+
+  .mobile-settings-intro h2 {
+    font-size: 0.95rem;
+    font-weight: 650;
+    line-height: 1.2;
+  }
+
+  .mobile-settings-intro p {
+    color: var(--mobile-muted);
+    font-size: 0.72rem;
+    line-height: 1.35;
+    margin-top: 0.2rem;
+  }
+
+  .mobile-settings-list {
+    background: var(--mobile-card);
+    border: 1px solid var(--mobile-line);
+    border-radius: 0.8rem;
+    overflow: hidden;
+  }
+
+  .mobile-settings-row {
+    padding: 0.78rem;
+  }
+
+  .mobile-settings-row + .mobile-settings-row {
+    border-top: 1px solid color-mix(in srgb, var(--mobile-line) 72%, transparent);
+  }
+
+  .mobile-settings-row__title {
+    align-items: center;
+    display: flex;
+    gap: 0.45rem;
+    margin-bottom: 0.55rem;
+  }
+
+  .mobile-settings-row__title svg {
+    color: var(--mobile-accent);
+    height: 1rem;
+    width: 1rem;
+  }
+
+  .mobile-settings-row__title h2 {
+    font-size: 0.78rem;
+    font-weight: 650;
   }
 
   .mobile-settings-options {
+    background: color-mix(in srgb, var(--secondary) 82%, transparent);
+    border-radius: 0.55rem;
     display: grid;
-    gap: 0.45rem;
+    gap: 0.2rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 0.2rem;
+  }
+
+  .mobile-settings-options--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .mobile-settings-options button {
     align-items: center;
     background: transparent;
-    border: 1px solid var(--mobile-line);
-    border-radius: 0.5rem;
+    border: 0;
+    border-radius: 0.4rem;
     color: var(--mobile-muted);
     display: flex;
-    font-size: 0.8rem;
-    justify-content: space-between;
-    min-height: 2.6rem;
-    padding: 0.55rem 0.65rem;
-    text-align: left;
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 550;
+    gap: 0.32rem;
+    justify-content: center;
+    min-height: 2.25rem;
+    min-width: 0;
+    padding: 0.4rem 0.25rem;
   }
 
   .mobile-settings-options button[data-active="true"] {
-    background: color-mix(in srgb, var(--primary) 11%, transparent);
-    border-color: var(--mobile-accent);
+    background: var(--background);
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.14);
     color: var(--foreground);
   }
 
   .mobile-settings-options button svg {
-    color: var(--mobile-accent);
-    height: 1rem;
-    opacity: 0;
-    width: 1rem;
+    flex: 0 0 auto;
+    height: 0.9rem;
+    width: 0.9rem;
   }
 
-  .mobile-settings-options button[data-active="true"] svg {
-    opacity: 1;
-  }
-
-  .mobile-settings-option__label {
-    align-items: center;
-    display: inline-flex;
-    gap: 0.45rem;
-  }
-
-  .mobile-settings-option__label svg {
-    color: var(--mobile-muted);
-    opacity: 1;
+  .mobile-settings-options button span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .mobile-daily-preview__grid {
@@ -534,15 +629,27 @@
     opacity: 0.35;
   }
 
+  .mobile-hourly-chart {
+    display: flex;
+    flex: 1 0 18rem;
+    flex-direction: column;
+    min-height: 18rem;
+  }
+
   .mobile-chart-area {
-    height: 14.5rem;
+    flex: 1;
+    min-height: 14.5rem;
     margin-top: 0.7rem;
     padding-left: 2.3rem;
     position: relative;
   }
 
   .mobile-chart-area::before {
-    background: repeating-linear-gradient(to bottom, transparent 0 3.58rem, color-mix(in srgb, var(--border) 45%, transparent) 3.62rem);
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(25% - 1px),
+      color-mix(in srgb, var(--border) 45%, transparent) calc(25% - 1px) 25%
+    );
     content: "";
     inset: 0 0 0 2.3rem;
     position: absolute;
@@ -576,7 +683,7 @@
   }
 
   .mobile-chart-axis--top { top: 1rem; }
-  .mobile-chart-axis--middle { top: 6.5rem; }
+  .mobile-chart-axis--middle { top: 50%; transform: translateY(-50%); }
   .mobile-chart-axis--bottom { bottom: 1rem; }
 
   .mobile-hour-strip {
@@ -586,6 +693,7 @@
     overflow-x: auto;
     padding: 0.7rem 0.35rem;
     scrollbar-width: none;
+    touch-action: pan-x;
   }
 
   .mobile-hour-strip article {
@@ -623,8 +731,10 @@
 
   .mobile-daily-list {
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: 0.5rem;
+    min-height: 0;
   }
 
   .mobile-daily-list article {
@@ -635,6 +745,7 @@
     display: grid;
     gap: 0.45rem;
     grid-template-columns: minmax(4.4rem, 0.9fr) 3.25rem minmax(5.6rem, 1.25fr) auto;
+    flex: 1 0 4.7rem;
     min-height: 4.7rem;
     padding: 0.55rem 0.72rem;
   }
@@ -701,6 +812,7 @@
     border-radius: 0.65rem;
     flex: 1;
     min-height: 0;
+    touch-action: pan-x pan-y;
   }
 
   .mobile-page--radar .weather-radar-map > div {
@@ -712,8 +824,8 @@
     border-top: 1px solid var(--mobile-line);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    min-height: 3.75rem;
-    padding: 0.42rem 0 max(0.45rem, env(safe-area-inset-bottom));
+    min-height: calc(4.45rem + env(safe-area-inset-bottom));
+    padding: 0.62rem 0.15rem max(0.5rem, env(safe-area-inset-bottom));
     position: relative;
     z-index: 20;
   }
@@ -725,19 +837,34 @@
     color: var(--mobile-muted);
     display: flex;
     flex-direction: column;
-    font-size: 0.65rem;
-    gap: 0.2rem;
-    min-height: 2.85rem;
+    font-size: 0.64rem;
+    gap: 0.22rem;
+    justify-content: center;
+    min-height: 3.15rem;
+    padding: 0;
   }
 
-  .mobile-bottom-nav__item svg {
-    height: 1.2rem;
+  .mobile-bottom-nav__icon {
+    align-items: center;
+    border-radius: 999px;
+    display: flex;
+    height: 1.9rem;
+    justify-content: center;
+    width: 2.8rem;
+  }
+
+  .mobile-bottom-nav__icon svg {
+    height: 1.5rem;
     stroke-width: 1.7;
-    width: 1.2rem;
+    width: 1.5rem;
   }
 
   .mobile-bottom-nav__item[data-active="true"] {
     color: var(--mobile-accent);
+  }
+
+  .mobile-bottom-nav__item[data-active="true"] .mobile-bottom-nav__icon {
+    background: color-mix(in srgb, var(--primary) 14%, transparent);
   }
 
   .mobile-empty-state {
@@ -805,6 +932,12 @@
     to { transform: rotate(360deg); }
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-page-transition {
+      animation: none !important;
+    }
+  }
+
   @media (max-height: 43rem) {
     .mobile-page {
       padding-bottom: 0.65rem;
@@ -816,6 +949,7 @@
     }
 
     .mobile-current {
+      min-height: 8.5rem;
       padding: 0.55rem 0.15rem 0.45rem;
     }
 
@@ -846,13 +980,36 @@
       width: 2.25rem;
     }
 
+    .mobile-daily-list {
+      gap: 0.4rem;
+    }
+
+    .mobile-daily-list article {
+      flex-basis: 4rem;
+      min-height: 4rem;
+      padding-block: 0.4rem;
+    }
+
+    .mobile-daily-list__icon {
+      height: 2.65rem;
+      width: 2.65rem;
+    }
+
     .mobile-bottom-nav {
-      min-height: 3.45rem;
-      padding-top: 0.28rem;
+      min-height: calc(4.1rem + env(safe-area-inset-bottom));
+      padding-top: 0.42rem;
     }
 
     .mobile-bottom-nav__item {
-      min-height: 2.55rem;
+      min-height: 2.95rem;
+    }
+
+    .mobile-settings-row {
+      padding-block: 0.62rem;
+    }
+
+    .mobile-settings-options button {
+      min-height: 2.05rem;
     }
   }
 }

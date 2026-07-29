@@ -20,7 +20,7 @@ export default function MobileDailyPage({
   const days = data.daily.time.slice(0, 7);
 
   return (
-    <div className="mobile-page mobile-page--detail">
+    <div className="mobile-page mobile-page--detail mobile-page--daily">
       <MobilePageHeader title={labels.daily} backLabel={labels.back} onBack={onBack} />
       <section className="mobile-daily-list">
         {days.map((time, index) => {

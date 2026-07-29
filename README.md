@@ -45,6 +45,16 @@ npm run lint     # Check source files with ESLint
 npm run preview  # Serve the production build locally
 ```
 
+## Android
+
+Android packaging uses Capacitor and requires Java 21 plus the Android SDK.
+
+```sh
+npm run android:apk
+```
+
+The debug APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
+
 ## Notes
 
 Weather, geocoding, radar, and the web font are external services. The app displays a clear retryable error state when a weather or location request cannot complete. Browser location access requires the visitor’s permission.

@@ -6,11 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "android:sync": "npm run build && cap sync android",
+    "android:apk": "npm run android:sync && cd android && gradlew.bat assembleDebug",
     "start": "vite preview",
     "preview": "vite preview",
     "lint": "eslint ."
   },
   "dependencies": {
+    "@capacitor/android": "^7.6.8",
     "@capacitor/core": "^7.4.2",
     "@capacitor/geolocation": "^7.1.4",
     "@meteocons/svg": "^0.1.0",
@@ -31,6 +34,7 @@
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.6.8",
     "@eslint/js": "^9.32.0",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/node": "^24.1",

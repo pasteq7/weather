@@ -29,6 +29,7 @@ import { useLanguage } from '@/app/context/LanguageProvider';
 import { cn } from '@/lib/utils';
 import type { MeteoconStyle } from '@/lib/meteocons';
 import { LocationSuggestion, searchLocationSuggestions } from '@/lib/api';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SimplePosition {
   coords: {
@@ -76,6 +77,9 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
   const isSearchableLocation = location.name &&
     location.name !== (t('Weather.currentLocation') || 'Current Location') &&
     location.name !== (t('Weather.unknownLocation') || 'Unknown Location');
+  const isUsingCurrentLocation = location.name === null &&
+    location.lat !== null &&
+    location.lon !== null;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -302,6 +306,10 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
     setLocationByName(fav);
   };
 
+  if (isInitializing) {
+    return <TopBarSkeleton />;
+  }
+
   return (
     <div className="weather-top-bar relative z-50 flex w-full flex-col gap-2 sm:flex-row sm:items-center">
       {currentTime && (
@@ -312,7 +320,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
       )}
 
       <TooltipProvider>
-        <form onSubmit={handleSearch} className="weather-search-form weather-surface relative flex h-10 min-w-0 flex-1 items-center overflow-hidden rounded-md border border-border/40 shadow-sm shadow-black/5 backdrop-blur-md sm:h-9">
+        <form onSubmit={handleSearch} className="weather-search-form weather-surface relative flex h-10 min-w-0 flex-1 items-center overflow-visible rounded-md border border-border/40 shadow-sm shadow-black/5 backdrop-blur-md sm:h-9">
           <Button className="weather-search-form__button h-10 w-10 rounded-none sm:h-9 sm:w-9" variant="ghost" size="icon" type="submit" aria-label={t('TopBar.searchPlaceholder')}>
             <Search className="h-4 w-4" />
           </Button>
@@ -321,7 +329,10 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
             className="h-10 flex-1 border-0 bg-transparent px-1 text-base shadow-none focus-visible:ring-0 sm:h-9 sm:text-sm"
             placeholder={t('TopBar.searchPlaceholder')}
             value={locationInput}
-            onChange={(e) => setLocationInput(e.target.value)}
+            onChange={(e) => {
+              suppressNextSuggestionSearchRef.current = false;
+              setLocationInput(e.target.value);
+            }}
             onKeyDown={handleSearchKeyDown}
             onBlur={() => {
               setSuggestions([]);
@@ -392,7 +403,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
                     'flex w-full rounded-sm px-2 py-2 text-left text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
                     activeSuggestionIndex === index && 'bg-accent text-accent-foreground'
                   )}
-                  onMouseDown={(event) => event.preventDefault()}
+                  onPointerDown={(event) => event.preventDefault()}
                   onClick={() => selectSuggestion(suggestion)}
                 >
                   {suggestion.label}
@@ -428,7 +439,17 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button className="weather-action-button h-10 w-full sm:h-9 sm:w-9" type="button" variant="ghost" size="icon" onClick={() => handleGeolocate(false)} disabled={isGeolocating}>
+              <Button
+                className={cn(
+                  'weather-action-button h-10 w-full sm:h-9 sm:w-9',
+                  isUsingCurrentLocation && 'weather-action-button--active'
+                )}
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => handleGeolocate(false)}
+                disabled={isGeolocating}
+              >
                 <Locate className={`h-4 w-4 ${isGeolocating ? 'animate-spin' : ''}`} />
               </Button>
             </TooltipTrigger>
@@ -473,6 +494,32 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
           </DropdownMenu>
         </div>
       </TooltipProvider>
+    </div>
+  );
+}
+
+function TopBarSkeleton() {
+  return (
+    <div
+      className="weather-top-bar weather-top-bar--skeleton relative z-50 flex w-full flex-col gap-2 sm:flex-row sm:items-center"
+      aria-hidden="true"
+    >
+      <div className="weather-top-bar__time weather-surface hidden h-9 items-center gap-1.5 rounded-md border border-border/25 px-2.5 md:flex">
+        <Skeleton className="h-3.5 w-3.5 rounded-full" />
+        <Skeleton className="h-3 w-10 rounded-full" />
+      </div>
+
+      <div className="weather-search-form weather-surface flex h-10 min-w-0 flex-1 items-center rounded-md border border-border/40 px-3 shadow-sm shadow-black/5 sm:h-9">
+        <Skeleton className="h-4 w-4 shrink-0 rounded-full" />
+        <Skeleton className="mx-3 h-3 w-full max-w-52 rounded-full" />
+        <Skeleton className="ml-auto h-4 w-4 shrink-0 rounded-full" />
+      </div>
+
+      <div className="weather-top-bar__actions grid h-10 grid-cols-4 items-center gap-2 sm:flex sm:h-9 sm:justify-end">
+        {Array.from({ length: 4 }, (_, index) => (
+          <Skeleton key={index} className="h-10 w-full rounded-md sm:h-9 sm:w-9" />
+        ))}
+      </div>
     </div>
   );
 }

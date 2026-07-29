@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Capacitor } from '@capacitor/core';
@@ -13,6 +13,10 @@ import MobileRadarPage from './mobile-radar-page';
 import MobileSearch from './mobile-search';
 import MobileSettingsPage from './mobile-settings-page';
 import type { MobileLabels, MobileView } from './mobile-types';
+
+const MOBILE_VIEWS: MobileView[] = ['home', 'hourly', 'daily', 'radar', 'settings'];
+const SWIPE_DISTANCE = 54;
+const SWIPE_MAX_VERTICAL = 72;
 
 export default function MobileWeatherApp() {
   const locale = useLocale();
@@ -29,6 +33,8 @@ export default function MobileWeatherApp() {
     setLocationBySuggestion,
   } = useAppContext();
   const [activeView, setActiveView] = useState<MobileView>('home');
+  const [transitionDirection, setTransitionDirection] = useState<'left' | 'right'>('left');
+  const swipeStart = useRef<{ x: number; y: number; ignore: boolean } | null>(null);
   const labels = useMemo(() => getLabels(locale), [locale]);
   const t = useTranslations();
 
@@ -69,6 +75,39 @@ export default function MobileWeatherApp() {
     });
   }, [reportError, setApiStatus, setLocationByCoords, t]);
 
+  const changeView = useCallback((nextView: MobileView) => {
+    const currentIndex = MOBILE_VIEWS.indexOf(activeView);
+    const nextIndex = MOBILE_VIEWS.indexOf(nextView);
+    setTransitionDirection(nextIndex >= currentIndex ? 'left' : 'right');
+    setActiveView(nextView);
+  }, [activeView]);
+
+  const handlePointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
+    if (!event.isPrimary) return;
+    const target = event.target as HTMLElement;
+    swipeStart.current = {
+      x: event.clientX,
+      y: event.clientY,
+      ignore: Boolean(target.closest('input, textarea, select, [data-swipe-ignore="true"]')),
+    };
+  }, []);
+
+  const handlePointerUp = useCallback((event: React.PointerEvent<HTMLElement>) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start || start.ignore || !event.isPrimary) return;
+
+    const deltaX = event.clientX - start.x;
+    const deltaY = event.clientY - start.y;
+    if (Math.abs(deltaX) < SWIPE_DISTANCE || Math.abs(deltaY) > SWIPE_MAX_VERTICAL || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
+
+    const currentIndex = MOBILE_VIEWS.indexOf(activeView);
+    const nextIndex = deltaX < 0 ? currentIndex + 1 : currentIndex - 1;
+    if (nextIndex >= 0 && nextIndex < MOBILE_VIEWS.length) {
+      changeView(MOBILE_VIEWS[nextIndex]);
+    }
+  }, [activeView, changeView]);
+
   let content;
   if (!weatherData) {
     content = (
@@ -91,13 +130,13 @@ export default function MobileWeatherApp() {
       </div>
     );
   } else if (activeView === 'hourly') {
-    content = <MobileHourlyPage data={weatherData} labels={labels} onBack={() => setActiveView('home')} />;
+    content = <MobileHourlyPage data={weatherData} labels={labels} onBack={() => changeView('home')} />;
   } else if (activeView === 'daily') {
-    content = <MobileDailyPage data={weatherData} labels={labels} onBack={() => setActiveView('home')} />;
+    content = <MobileDailyPage data={weatherData} labels={labels} onBack={() => changeView('home')} />;
   } else if (activeView === 'radar') {
-    content = <MobileRadarPage labels={labels} onBack={() => setActiveView('home')} />;
+    content = <MobileRadarPage labels={labels} onBack={() => changeView('home')} />;
   } else if (activeView === 'settings') {
-    content = <MobileSettingsPage labels={labels} onBack={() => setActiveView('home')} />;
+    content = <MobileSettingsPage labels={labels} onBack={() => changeView('home')} />;
   } else {
     content = (
       <MobileHomePage
@@ -113,10 +152,18 @@ export default function MobileWeatherApp() {
 
   return (
     <div className="mobile-weather-app">
-      <main className="mobile-weather-app__content" aria-busy={isLoading}>
-        {content}
+      <main
+        className="mobile-weather-app__content"
+        aria-busy={isLoading}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={() => { swipeStart.current = null; }}
+      >
+        <div className="mobile-page-transition" data-direction={transitionDirection} key={activeView}>
+          {content}
+        </div>
       </main>
-      <MobileNavigation activeView={activeView} labels={labels} onChange={setActiveView} />
+      <MobileNavigation activeView={activeView} labels={labels} onChange={changeView} />
     </div>
   );
 }
