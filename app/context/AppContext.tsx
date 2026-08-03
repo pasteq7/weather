@@ -1,7 +1,7 @@
 // app/context/AppContext.tsx
 'use client';
 
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { WeatherData, ApiIssueKey } from '@/lib/types';
 import { fetchWeatherByCity, fetchWeatherData, getCityNameFromCoordinates, WeatherApiError } from '@/lib/api';
 import { toast } from 'sonner';
@@ -71,6 +71,7 @@ interface AppContextType {
   setLocationBySuggestion: (location: { name: string; lat: number; lon: number }) => void;
   setLocationByCoords: (lat: number, lon: number) => void;
   refreshData: () => void;
+  refreshDataSilently: () => void;
   finishInitialization: () => void;
   setApiStatus: (service: keyof ApiStatuses, status: ApiStatus) => void;
   reportError: (error: AppErrorInput) => void;
@@ -79,6 +80,11 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const hasCoordinates = (location: Location) => location.lat !== null && location.lon !== null;
+const areIssuesEqual = (left?: ApiIssueKey[], right?: ApiIssueKey[]) => (
+  left === right || (
+    left?.length === right?.length && left?.every((issue, index) => issue === right?.[index])
+  )
+);
 const ICON_STYLE_STORAGE_KEY = 'weather-icon-style';
 const UNITS_STORAGE_KEY = 'weather-units';
 const NON_RETRYABLE_ERROR_CODES = new Set(['ERROR_CITY_NOT_FOUND', 'ERROR_GEOLOCATION_DENIED', 'ERROR_NO_LOCATION']);
@@ -126,9 +132,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
   
   const activeFetchIdRef = useRef(0);
+  const activeFetchControllerRef = useRef<AbortController | null>(null);
 
   const setApiStatus = useCallback((service: keyof ApiStatuses, status: ApiStatus) => {
-    setApiStatusState(prev => ({ ...prev, [service]: status }));
+    setApiStatusState(prev => {
+      const currentStatus = prev[service];
+      if (currentStatus.status === status.status && areIssuesEqual(currentStatus.issues, status.issues)) {
+        return prev;
+      }
+      return { ...prev, [service]: status };
+    });
   }, []);
 
   const buildAppError = useCallback((input: Exclude<AppErrorInput, null>): AppError => {
@@ -195,6 +208,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const fetchId = activeFetchIdRef.current + 1;
     activeFetchIdRef.current = fetchId;
+    activeFetchControllerRef.current?.abort();
+    const controller = new AbortController();
+    activeFetchControllerRef.current = controller;
     setIsLoading(true);
     setError(null);
 
@@ -207,10 +223,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       let nonBlockingError: AppError | null = null;
 
       if (lat !== null && lon !== null) {
-        data = await fetchWeatherData(lat, lon, currentUnits, clientTimezone);
+        data = await fetchWeatherData(lat, lon, currentUnits, clientTimezone, controller.signal);
         
         if (!name) {
-          const geoResult = await getCityNameFromCoordinates(lat, lon);
+          const geoResult = await getCityNameFromCoordinates(lat, lon, controller.signal);
           setApiStatus('reverseGeo', { status: geoResult.ok ? 'operational' : 'outage' });
           if (!geoResult.ok) {
             nonBlockingError = buildAppError({
@@ -224,7 +240,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           name = geoResult.name || t('Weather.currentLocation');
         }
       } else if (name) {
-        const result = await fetchWeatherByCity(name, currentUnits, clientTimezone);
+        const result = await fetchWeatherByCity(name, currentUnits, clientTimezone, controller.signal);
         setApiStatus('reverseGeo', { status: 'operational' });
         data = result;
         name = result.name || name;
@@ -243,6 +259,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setApiStatus('openMeteo', { status: 'operational' });
 
     } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
       if (fetchId !== activeFetchIdRef.current) return;
 
       const weatherError = e instanceof WeatherApiError ? e : null;
@@ -270,6 +287,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setWeatherData(previousData => previousData);
     } finally {
       if (fetchId === activeFetchIdRef.current) {
+        activeFetchControllerRef.current = null;
         setIsLoading(false);
       }
     }
@@ -280,6 +298,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       fetchAndSetWeather(location, units);
     }
   }, [location, units, fetchAndSetWeather]);
+
+  useEffect(() => () => activeFetchControllerRef.current?.abort(), []);
 
   const setLocationByName = useCallback((name: string) => {
     if (name && name.trim()) {
@@ -309,26 +329,53 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [location, units, fetchAndSetWeather, t]);
 
+  const refreshDataSilently = useCallback(() => {
+    if (location.name || hasCoordinates(location)) {
+      fetchAndSetWeather(location, units);
+    }
+  }, [location, units, fetchAndSetWeather]);
+
+  const contextValue = useMemo<AppContextType>(() => ({
+    location,
+    units,
+    iconStyle,
+    weatherData,
+    isLoading,
+    error,
+    isInitializing,
+    apiStatus,
+    setUnits,
+    setIconStyle,
+    setLocationByName,
+    setLocationBySuggestion,
+    setLocationByCoords,
+    refreshData,
+    refreshDataSilently,
+    finishInitialization,
+    setApiStatus,
+    reportError,
+  }), [
+    location,
+    units,
+    iconStyle,
+    weatherData,
+    isLoading,
+    error,
+    isInitializing,
+    apiStatus,
+    setIconStyle,
+    setLocationByName,
+    setLocationBySuggestion,
+    setLocationByCoords,
+    refreshData,
+    refreshDataSilently,
+    finishInitialization,
+    setApiStatus,
+    reportError,
+  ]);
+
   return (
-    <AppContext.Provider value={{ 
-      location, 
-      units, 
-      iconStyle,
-      weatherData, 
-      isLoading, 
-      error, 
-      isInitializing,
-      apiStatus,
-      setUnits, 
-      setIconStyle,
-      setLocationByName, 
-      setLocationBySuggestion,
-      setLocationByCoords, 
-      refreshData,
-      finishInitialization,
-      setApiStatus,
-      reportError
-    }}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );

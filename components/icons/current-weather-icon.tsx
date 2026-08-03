@@ -1,4 +1,4 @@
-import { FC, useEffect, useId, useLayoutEffect, useRef } from 'react';
+import { FC, memo, useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { cn } from '@/lib/utils';
 import { currentWeatherIconNames, getMeteocon } from '@/lib/meteocons';
@@ -6,9 +6,10 @@ import { currentWeatherIconNames, getMeteocon } from '@/lib/meteocons';
 interface CurrentWeatherIconProps {
   iconCode: string;
   className?: string;
+  animated?: boolean;
 }
 
-const CurrentWeatherIcon: FC<CurrentWeatherIconProps> = ({ iconCode, className }) => {
+const CurrentWeatherIcon: FC<CurrentWeatherIconProps> = ({ iconCode, className, animated = true }) => {
   const { iconStyle } = useAppContext();
   const iconName = currentWeatherIconNames[iconCode] ?? 'clear-day';
   const IconComponent = getMeteocon(iconStyle, iconName);
@@ -18,6 +19,10 @@ const CurrentWeatherIcon: FC<CurrentWeatherIconProps> = ({ iconCode, className }
   useLayoutEffect(() => {
     const root = iconRef.current;
     if (!root) return;
+
+    if (!animated) {
+      root.querySelectorAll('animate, animateTransform, animateMotion').forEach((element) => element.remove());
+    }
 
     const idMap = new Map<string, string>();
     root.querySelectorAll<SVGElement>('[id]').forEach((element) => {
@@ -45,10 +50,15 @@ const CurrentWeatherIcon: FC<CurrentWeatherIconProps> = ({ iconCode, className }
         }
       });
     });
-  }, [IconComponent, instanceId]);
+  }, [IconComponent, instanceId, animated]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const timingElements = iconRef.current?.querySelectorAll('animate, animateTransform, animateMotion');
+
+    if (!animated) {
+      timingElements?.forEach((element) => element.remove());
+      return;
+    }
 
     timingElements?.forEach((element) => {
       ['dur', 'begin'].forEach((attribute) => {
@@ -64,7 +74,45 @@ const CurrentWeatherIcon: FC<CurrentWeatherIconProps> = ({ iconCode, className }
         );
       });
     });
-  }, [IconComponent]);
+  }, [IconComponent, animated]);
+
+  useEffect(() => {
+    if (!animated) return;
+
+    const root = iconRef.current;
+    const svg = root?.querySelector('svg');
+    if (!root || !svg) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let isVisible = true;
+
+    const updatePlayback = () => {
+      const shouldPause = document.hidden || reducedMotion.matches || !isVisible;
+      if (shouldPause) {
+        svg.pauseAnimations?.();
+      } else {
+        svg.unpauseAnimations?.();
+      }
+    };
+
+    const observer = typeof IntersectionObserver === 'undefined'
+      ? null
+      : new IntersectionObserver(([entry]) => {
+          isVisible = entry?.isIntersecting ?? true;
+          updatePlayback();
+        }, { rootMargin: '64px' });
+
+    observer?.observe(root);
+    document.addEventListener('visibilitychange', updatePlayback);
+    reducedMotion.addEventListener('change', updatePlayback);
+    updatePlayback();
+
+    return () => {
+      observer?.disconnect();
+      document.removeEventListener('visibilitychange', updatePlayback);
+      reducedMotion.removeEventListener('change', updatePlayback);
+    };
+  }, [IconComponent, animated]);
 
   return (
     <div ref={iconRef} className={cn('h-full w-full text-primary', className)}>
@@ -73,4 +121,4 @@ const CurrentWeatherIcon: FC<CurrentWeatherIconProps> = ({ iconCode, className }
   );
 };
 
-export default CurrentWeatherIcon;
+export default memo(CurrentWeatherIcon);

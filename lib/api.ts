@@ -50,13 +50,15 @@ export interface LocationSuggestion {
 const fetchJson = async <T>(
   url: string,
   errorCode: string,
-  service?: WeatherApiError['service']
+  service?: WeatherApiError['service'],
+  signal?: AbortSignal
 ): Promise<T> => {
   let response: Response;
 
   try {
-    response = await fetch(url);
-  } catch {
+    response = await fetch(url, { signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error;
     throw new WeatherApiError(errorCode, { service, reason: 'network' });
   }
 
@@ -106,7 +108,7 @@ const isWeatherData = (data: unknown): data is WeatherData => {
   );
 };
 
-export const getCoordinatesForCity = async (city: string) => {
+export const getCoordinatesForCity = async (city: string, signal?: AbortSignal) => {
   const cityName = city.split(',')[0].trim();
 
   const params = new URLSearchParams({
@@ -116,7 +118,7 @@ export const getCoordinatesForCity = async (city: string) => {
     format: 'json'
   });
 
-  const data = await fetchJson<GeocodingResponse>(`${GEO_API_URL}?${params.toString()}`, 'ERROR_FETCH_COORDINATES', 'geocoding');
+  const data = await fetchJson<GeocodingResponse>(`${GEO_API_URL}?${params.toString()}`, 'ERROR_FETCH_COORDINATES', 'geocoding', signal);
   const result = data.results?.[0];
 
   if (!result || typeof result.latitude !== 'number' || typeof result.longitude !== 'number') {
@@ -174,14 +176,14 @@ export const searchLocationSuggestions = async (
   });
 };
 
-export const getCityNameFromCoordinates = async (latitude: number, longitude: number): Promise<{name: string | null, ok: boolean}> => {
+export const getCityNameFromCoordinates = async (latitude: number, longitude: number, signal?: AbortSignal): Promise<{name: string | null, ok: boolean}> => {
     const params = new URLSearchParams({
         latitude: latitude.toString(),
         longitude: longitude.toString(),
         localityLanguage: 'en',
     });
     try {
-        const response = await fetch(`${REVERSE_GEO_API_URL}?${params.toString()}`);
+        const response = await fetch(`${REVERSE_GEO_API_URL}?${params.toString()}`, { signal });
         if (!response.ok) return { name: null, ok: false };
         
         const data = await response.json();
@@ -191,12 +193,13 @@ export const getCityNameFromCoordinates = async (latitude: number, longitude: nu
         }
         return { name: null, ok: true };
     } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') throw error;
         console.error("Failed to fetch city name from coordinates", error);
         return { name: null, ok: false };
     }
 };
 
-export const fetchWeatherData = async (latitude: number, longitude: number, units: string, timezone: string = 'auto'): Promise<WeatherData> => {
+export const fetchWeatherData = async (latitude: number, longitude: number, units: string = 'metric', timezone: string = 'auto', signal?: AbortSignal): Promise<WeatherData> => {
   const isImperial = units === 'imperial';
 
   const params = new URLSearchParams({
@@ -212,7 +215,7 @@ export const fetchWeatherData = async (latitude: number, longitude: number, unit
     wind_speed_unit: isImperial ? 'mph' : 'kmh',
   });
 
-  const data = await fetchJson<unknown>(`${WEATHER_API_URL}?${params.toString()}`, 'ERROR_FETCH_WEATHER', 'weather');
+  const data = await fetchJson<unknown>(`${WEATHER_API_URL}?${params.toString()}`, 'ERROR_FETCH_WEATHER', 'weather', signal);
 
   if (!isWeatherData(data)) {
     throw new WeatherApiError('ERROR_INVALID_WEATHER_DATA', { service: 'weather', reason: 'schema' });
@@ -221,9 +224,9 @@ export const fetchWeatherData = async (latitude: number, longitude: number, unit
   return data;
 };
 
-export const fetchWeatherByCity = async (city: string, units: string = 'metric', timezone: string = 'auto') => {
-  const { latitude, longitude, name } = await getCoordinatesForCity(city);
-  const weatherData = await fetchWeatherData(latitude, longitude, units, timezone);
+export const fetchWeatherByCity = async (city: string, units: string = 'metric', timezone: string = 'auto', signal?: AbortSignal) => {
+  const { latitude, longitude, name } = await getCoordinatesForCity(city, signal);
+  const weatherData = await fetchWeatherData(latitude, longitude, units, timezone, signal);
   
   return { ...weatherData, name, latitude, longitude };
 };

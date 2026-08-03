@@ -7,10 +7,11 @@ import LoadingSkeleton from '@/app/Loading';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/layout/footer';
-import RadarMap from '@/components/features/radar-map';
 import { AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
+
+const RadarMap = lazy(() => import('@/components/features/radar-map'));
 
 interface HomePageProps {
   activeView: 'weather' | 'radar';
@@ -26,7 +27,9 @@ export default function HomePage({ activeView }: HomePageProps) {
     return (
       <main className="min-h-0 overflow-hidden">
         <div className="weather-radar-dashboard flex h-full min-h-0 flex-col gap-2.5 overflow-hidden pb-1 pr-1 min-[72rem]:pr-0">
-          <RadarMap />
+          <Suspense fallback={<div className="weather-surface min-h-0 flex-1 rounded-lg border border-border/25" aria-busy="true" />}>
+            <RadarMap />
+          </Suspense>
           <Footer activeView="radar" />
         </div>
       </main>

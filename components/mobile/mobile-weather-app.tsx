@@ -1,18 +1,19 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { toast } from 'sonner';
 import { useAppContext } from '@/app/context/AppContext';
-import MobileDailyPage from './mobile-daily-page';
 import MobileHomePage from './mobile-home-page';
-import MobileHourlyPage from './mobile-hourly-page';
 import MobileNavigation from './mobile-navigation';
-import MobileRadarPage from './mobile-radar-page';
 import MobileSearch from './mobile-search';
-import MobileSettingsPage from './mobile-settings-page';
 import type { MobileLabels, MobileView } from './mobile-types';
+
+const MobileDailyPage = lazy(() => import('./mobile-daily-page'));
+const MobileHourlyPage = lazy(() => import('./mobile-hourly-page'));
+const MobileRadarPage = lazy(() => import('./mobile-radar-page'));
+const MobileSettingsPage = lazy(() => import('./mobile-settings-page'));
 
 const MOBILE_VIEWS: MobileView[] = ['home', 'hourly', 'daily', 'radar', 'settings'];
 const SWIPE_DISTANCE = 54;
@@ -24,6 +25,7 @@ export default function MobileWeatherApp() {
     weatherData,
     units,
     isLoading,
+    isInitializing,
     error,
     refreshData,
     reportError,
@@ -31,14 +33,19 @@ export default function MobileWeatherApp() {
     setLocationByCoords,
     setLocationByName,
     setLocationBySuggestion,
+    finishInitialization,
   } = useAppContext();
   const [activeView, setActiveView] = useState<MobileView>('home');
   const [transitionDirection, setTransitionDirection] = useState<'left' | 'right'>('left');
   const swipeStart = useRef<{ x: number; y: number; ignore: boolean } | null>(null);
+  const isGeolocatingRef = useRef(false);
   const labels = useMemo(() => getLabels(locale), [locale]);
   const t = useTranslations();
 
-  const handleGeolocate = useCallback(async () => {
+  const handleGeolocate = useCallback(async (isAuto = false) => {
+    if (isGeolocatingRef.current) return;
+    isGeolocatingRef.current = true;
+
     const requestLocation = async () => {
       if (Capacitor.isNativePlatform()) {
         const permissions = await Geolocation.requestPermissions();
@@ -54,26 +61,38 @@ export default function MobileWeatherApp() {
     };
 
     toast.promise(requestLocation(), {
-      loading: t('Toasts.gettingLocation'),
+      loading: isAuto ? t('Toasts.gettingLocationAuto') : t('Toasts.gettingLocation'),
       success: (position) => {
+        isGeolocatingRef.current = false;
+        if (isAuto) finishInitialization();
         setApiStatus('geolocation', { status: 'operational' });
         reportError(null);
         setLocationByCoords(position.coords.latitude, position.coords.longitude);
         return t('Toasts.locationFound');
       },
       error: (error: Error | GeolocationPositionError) => {
+        isGeolocatingRef.current = false;
+        if (isAuto) finishInitialization();
         const isDenied = error.message.toLowerCase().includes('denied') || ('code' in error && error.code === 1);
         const isUnsupported = error.message.toLowerCase().includes('not supported');
         setApiStatus('geolocation', { status: 'outage' });
-        reportError({
-          code: isDenied ? 'ERROR_GEOLOCATION_DENIED' : 'ERROR_GEOLOCATION_UNAVAILABLE',
-          reason: isDenied ? 'permission' : isUnsupported ? 'unsupported' : 'unavailable',
-          canRetry: !isUnsupported,
-        });
-        return isDenied ? t('Toasts.locationDenied') : t('Toasts.locationError');
+        if (!isAuto) {
+          reportError({
+            code: isDenied ? 'ERROR_GEOLOCATION_DENIED' : 'ERROR_GEOLOCATION_UNAVAILABLE',
+            reason: isDenied ? 'permission' : isUnsupported ? 'unsupported' : 'unavailable',
+            canRetry: !isUnsupported,
+          });
+        }
+        return isDenied
+          ? t('Toasts.locationDenied')
+          : isAuto ? t('Toasts.locationErrorAuto') : t('Toasts.locationError');
       },
     });
-  }, [reportError, setApiStatus, setLocationByCoords, t]);
+  }, [finishInitialization, reportError, setApiStatus, setLocationByCoords, t]);
+
+  useEffect(() => {
+    if (isInitializing) handleGeolocate(true);
+  }, [handleGeolocate, isInitializing]);
 
   const changeView = useCallback((nextView: MobileView) => {
     const currentIndex = MOBILE_VIEWS.indexOf(activeView);
@@ -110,6 +129,7 @@ export default function MobileWeatherApp() {
 
   let content;
   if (!weatherData) {
+    const isFindingLocation = isInitializing && !error;
     content = (
       <div className="mobile-empty-state">
         <MobileSearch
@@ -119,9 +139,9 @@ export default function MobileWeatherApp() {
           onSearch={setLocationByName}
           onSuggestion={setLocationBySuggestion}
         />
-        {error ? <AlertTriangle /> : <span className="mobile-loader" />}
-        <h1>{error?.title || t('Metadata.title')}</h1>
-        <p>{error?.message || t('Weather.findingLocalForecast')}</p>
+        {error ? <AlertTriangle /> : isFindingLocation ? <span className="mobile-loader" /> : <Search />}
+        <h1>{error?.title || (isFindingLocation ? t('Metadata.title') : t('Weather.noLocationTitle'))}</h1>
+        <p>{error?.message || (isFindingLocation ? t('Weather.findingLocalForecast') : t('Weather.noLocationDescription'))}</p>
         {error?.canRetry && (
           <button className="mobile-empty-state__retry" type="button" onClick={refreshData}>
             <RefreshCw /> {t('Errors.retry')}
@@ -160,7 +180,9 @@ export default function MobileWeatherApp() {
         onPointerCancel={() => { swipeStart.current = null; }}
       >
         <div className="mobile-page-transition" data-direction={transitionDirection} key={activeView}>
-          {content}
+          <Suspense fallback={<div className="mobile-empty-state" aria-busy="true"><span className="mobile-loader" /></div>}>
+            {content}
+          </Suspense>
         </div>
       </main>
       <MobileNavigation activeView={activeView} labels={labels} onChange={changeView} />

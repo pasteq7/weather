@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Languages, Monitor, Moon, Palette, SlidersHorizontal, Sun, Thermometer } from 'lucide-react';
+import { Languages, Monitor, Moon, Palette, Sun, Thermometer } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useAppContext } from '@/app/context/AppContext';
@@ -31,14 +31,6 @@ export default function MobileSettingsPage({
   return (
     <div className="mobile-page mobile-page--detail mobile-page--settings">
       <MobilePageHeader title={labels.settings} backLabel={labels.back} onBack={onBack} />
-
-      <div className="mobile-settings-intro">
-        <span><SlidersHorizontal aria-hidden="true" /></span>
-        <div>
-          <h2>{locale === 'fr' ? 'Votre expérience météo' : 'Your weather experience'}</h2>
-          <p>{locale === 'fr' ? 'Personnalisez rapidement l’affichage de l’application.' : 'Quickly tailor how the app looks and feels.'}</p>
-        </div>
-      </div>
 
       <div className="mobile-settings-list">
         <SettingGroup icon={Thermometer} title={t('unitsLabel')}>

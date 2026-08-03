@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MapPin, Radar } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAppContext } from '@/app/context/AppContext';
@@ -11,6 +11,13 @@ export default function RadarMap() {
   const latitude = weatherData?.latitude ?? location.lat ?? DEFAULT_LOCATION.latitude;
   const longitude = weatherData?.longitude ?? location.lon ?? DEFAULT_LOCATION.longitude;
   const locationName = weatherData?.name ?? location.name ?? t('defaultLocation');
+  const [isPageVisible, setIsPageVisible] = useState(() => !document.hidden);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => setIsPageVisible(!document.hidden);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   const windyUrl = useMemo(() => {
     const params = new URLSearchParams({
@@ -49,15 +56,19 @@ export default function RadarMap() {
           <span className="truncate">{locationName}</span>
         </div>
       </div>
-      <iframe
-        className="min-h-0 w-full flex-1 border-0"
-        src={windyUrl}
-        title={t('iframeTitle')}
-        loading="lazy"
-        allowFullScreen
-        onLoad={() => setApiStatus('windy', { status: 'operational' })}
-        onError={() => setApiStatus('windy', { status: 'outage' })}
-      />
+      {isPageVisible ? (
+        <iframe
+          className="min-h-0 w-full flex-1 border-0"
+          src={windyUrl}
+          title={t('iframeTitle')}
+          loading="lazy"
+          allowFullScreen
+          onLoad={() => setApiStatus('windy', { status: 'operational' })}
+          onError={() => setApiStatus('windy', { status: 'outage' })}
+        />
+      ) : (
+        <div className="min-h-0 flex-1 bg-secondary/20" aria-hidden="true" />
+      )}
     </section>
   );
 }

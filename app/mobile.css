@@ -399,44 +399,6 @@
     padding-bottom: 0.8rem;
   }
 
-  .mobile-settings-intro {
-    align-items: center;
-    display: flex;
-    gap: 0.8rem;
-    margin: 0.1rem 0 0.85rem;
-    padding: 0 0.2rem;
-  }
-
-  .mobile-settings-intro > span {
-    align-items: center;
-    background: color-mix(in srgb, var(--primary) 14%, transparent);
-    border-radius: 0.75rem;
-    color: var(--mobile-accent);
-    display: flex;
-    flex: 0 0 auto;
-    height: 2.75rem;
-    justify-content: center;
-    width: 2.75rem;
-  }
-
-  .mobile-settings-intro svg {
-    height: 1.3rem;
-    width: 1.3rem;
-  }
-
-  .mobile-settings-intro h2 {
-    font-size: 0.95rem;
-    font-weight: 650;
-    line-height: 1.2;
-  }
-
-  .mobile-settings-intro p {
-    color: var(--mobile-muted);
-    font-size: 0.72rem;
-    line-height: 1.35;
-    margin-top: 0.2rem;
-  }
-
   .mobile-settings-list {
     background: var(--mobile-card);
     border: 1px solid var(--mobile-line);
@@ -471,7 +433,8 @@
   }
 
   .mobile-settings-options {
-    background: color-mix(in srgb, var(--secondary) 82%, transparent);
+    background: color-mix(in srgb, var(--mobile-card) 82%, var(--background));
+    border: 1px solid color-mix(in srgb, var(--mobile-line) 72%, transparent);
     border-radius: 0.55rem;
     display: grid;
     gap: 0.2rem;
@@ -501,9 +464,9 @@
   }
 
   .mobile-settings-options button[data-active="true"] {
-    background: var(--background);
-    box-shadow: 0 1px 4px rgb(0 0 0 / 0.14);
-    color: var(--foreground);
+    background: color-mix(in srgb, var(--primary) 14%, var(--mobile-card));
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.1);
+    color: var(--primary);
   }
 
   .mobile-settings-options button svg {
@@ -937,7 +900,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .mobile-page-transition {
+    .mobile-page-transition,
+    .mobile-loader {
       animation: none !important;
     }
   }

@@ -300,7 +300,15 @@ body,
 }
 
 .forecast-item {
+  contain: paint style;
+  content-visibility: auto;
   min-height: 0;
+}
+
+.today-weather-card,
+.forecast-card,
+.weather-data-card {
+  contain: paint;
 }
 
 .forecast-item__icon {

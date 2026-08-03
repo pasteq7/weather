@@ -2,19 +2,20 @@
 
 'use client';
 
-import { useMemo, useCallback, useState, useEffect, useRef, type MouseEvent, type WheelEvent } from 'react';
+import { lazy, memo, Suspense, useMemo, useCallback, useState, useEffect, useRef, type MouseEvent, type WheelEvent } from 'react';
 import { useViewPreference } from '@/hooks/use-view-preference'; 
 import { Card, CardContent } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Area, ComposedChart, XAxis, YAxis, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
 import { BarChart, List, Thermometer, Wind, Droplets } from 'lucide-react';
-import { formatTemperature, mapWmoToWeather, formatWindSpeed, cn } from '@/lib/utils';
+import { formatTemperature, mapWmoToWeather, cn } from '@/lib/utils';
 import { WeatherData, DailyDataPoint, HourlyDataPoint } from '@/lib/types';
 import CurrentWeatherIcon from '../icons/current-weather-icon';
 import { Skeleton } from '../ui/skeleton';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { useTranslations, useLocale } from 'next-intl';
+import type { ForecastChartPoint } from './forecast-chart';
+
+const ForecastChart = lazy(() => import('./forecast-chart'));
 
 const DAILY_FORECAST_DAYS = 14;
 
@@ -154,6 +155,9 @@ function HourlyForecastItem({
   );
 }
 
+const MemoDailyForecastItem = memo(DailyForecastItem);
+const MemoHourlyForecastItem = memo(HourlyForecastItem);
+
 interface ForecastViewProps {
   type: 'hourly' | 'daily';
   weatherData: WeatherData;
@@ -211,15 +215,38 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
   }, []);
 
   useEffect(() => {
+    if (type !== 'hourly') return;
+
+    let timeoutId: number | undefined;
+
     const updateCurrentTimestamp = () => {
       setCurrentTimestamp(Math.floor(Date.now() / 1000));
     };
 
-    updateCurrentTimestamp();
-    const intervalId = window.setInterval(updateCurrentTimestamp, 60_000);
+    const scheduleNextMinute = () => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      if (document.hidden) return;
 
-    return () => window.clearInterval(intervalId);
-  }, []);
+      const delay = 60_050 - (Date.now() % 60_000);
+      timeoutId = window.setTimeout(() => {
+        updateCurrentTimestamp();
+        scheduleNextMinute();
+      }, delay);
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) updateCurrentTimestamp();
+      scheduleNextMinute();
+    };
+
+    scheduleNextMinute();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [type]);
 
   const chartId = useMemo(() => 
     `forecast-${type}-${Date.now()}-${Math.random().toString(36).substr(2, 12)}`, 
@@ -256,6 +283,7 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
   }), [units, t, locale]);
 
   const chartData = useMemo(() => {
+    if (view !== 'chart') return [];
     if (!weatherData?.hourly?.time || !weatherData?.daily?.time?.[0]) return [];
     const { time, temperature_2m, precipitation_probability, wind_speed_10m } = weatherData.hourly;
 
@@ -278,7 +306,7 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
       rain: precipitation_probability[startIndex + i],
       wind: wind_speed_10m[startIndex + i],
     }));
-  }, [weatherData, type, currentTimestamp]);
+  }, [weatherData, type, currentTimestamp, view]);
 
   const hourlyTicks = useMemo(() => {
     if (type !== 'hourly' || !chartData.length) return undefined;
@@ -290,6 +318,7 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
   }, [chartData, type]);
 
   const listData = useMemo(() => {
+    if (view !== 'list') return [];
     if (type === 'daily') {
       return weatherData.daily.time.slice(0, DAILY_FORECAST_DAYS).map((t, i) => ({
         time: t,
@@ -360,7 +389,7 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
       }
       return result;
     }
-  }, [weatherData, type, currentTimestamp]);
+  }, [weatherData, type, currentTimestamp, view]);
 
   const listItemWidth = type === 'daily'
     ? "basis-[calc((100%-0.75rem)/4)] min-[50rem]:basis-[calc((100%-1.5rem)/7)]"
@@ -522,174 +551,31 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
           ) : (
             <>
               {/* Chart View */}
-              <div
-                className={cn(
-                  "absolute inset-0 w-full h-full transition-opacity duration-300",
-                  view === 'chart'
-                    ? "opacity-100"
-                    : "opacity-0 pointer-events-none"
-                )}
-              >
-                {!chartData.length ? <Skeleton className="w-full h-full" /> : (
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ComposedChart
-                      data={chartData}
-                      margin={{ top: 8, right: 12, left: -4, bottom: 0 }}
-                      id={`${chartId}-chart`}
-                    >
-                      <defs>
-                        <linearGradient id={`${chartId}-temperature-fill`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--color-temperature)" stopOpacity={0.3} />
-                          <stop offset="100%" stopColor="var(--color-temperature)" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id={`${chartId}-rain-fill`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--color-rain)" stopOpacity={0.22} />
-                          <stop offset="100%" stopColor="var(--color-rain)" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id={`${chartId}-wind-fill`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--color-wind)" stopOpacity={0.22} />
-                          <stop offset="100%" stopColor="var(--color-wind)" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis
-                        dataKey="time"
-                        type="number"
-                        domain={['dataMin', 'dataMax']}
-                        ticks={type === 'daily' ? dailyTicks : hourlyTicks}
-                        tickFormatter={config[type].tickFormatter}
-                        tickLine={false}
-                        axisLine={false}
-                        stroke="var(--muted-foreground)"
-                        tick={{ fill: "var(--muted-foreground)", opacity: 0.8 }}
-                        fontSize={12}
-                      />
-                      <YAxis
-                        yAxisId="temp"
-                        tickLine={false}
-                        axisLine={false}
-                        stroke="var(--muted-foreground)"
-                        tick={{ fill: "var(--muted-foreground)", opacity: 0.8 }}
-                        tickFormatter={(value) => `${value}\u00B0`}
-                        domain={tempMetrics.domain}
-                        ticks={tempMetrics.ticks}
-                        fontSize={12}
-                      />
-                      <YAxis yAxisId="rain" hide domain={[0, 105]} />
-                      <YAxis yAxisId="wind" hide domain={[0, 'dataMax + 10']} />
-                      
-                      <RechartsTooltip
-                        cursor={true}
-                        content={
-                          <ChartTooltipContent
-                            labelFormatter={(label) => new Date(Number(label) * 1000).toLocaleString(locale, {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: units === 'imperial'
-                            })}
-                            formatter={(value, name, item) => {
-                              let displayValue;
-
-                              if (name === 'temperature') {
-                                const [val, unit] = formatTemperature(value as number, units);
-                                displayValue = `${val}${unit}`;
-                              } else if (name === 'wind') {
-                                const [val, unit] = formatWindSpeed(value as number, units);
-                                displayValue = `${val} ${unit}`;
-                              } else if (name === 'rain') {
-                                const val = Math.round(value as number);
-                                displayValue = `${val}%`;
-                              } else {
-                                return null;
-                              }
-
-                              const itemConfig = chartConfig[name as keyof typeof chartConfig];
-
-                              return (
-                                <div className="flex items-center gap-2 text-xs">
-                                  <div
-                                    className="w-2.5 h-2.5 rounded-full"
-                                    style={{ background: item.color }}
-                                  />
-                                  <div className="flex flex-1 justify-between gap-2">
-                                    <span className="font-medium text-muted-foreground">{itemConfig.label}</span>
-                                    <span className="font-bold">{displayValue}</span>
-                                  </div>
-                                </div>
-                              )
-                            }}
-                          />
-                        }
-                      />
-
-                      {daySeparators.map((time, index) => (
-                        <ReferenceLine
-                          key={`${chartId}-day-separator-${index}`}
-                          x={time}
-                          yAxisId="temp"
-                          stroke="var(--border)"
-                          strokeWidth={1}
-                          strokeOpacity={0.24}
-                        />
-                      ))}
-                      {displayModes.includes('temperature') && (
-                        <Area
-                          yAxisId="temp"
-                          type="monotone"
-                          dataKey="temperature"
-                          stroke="var(--color-temperature)"
-                          strokeLinecap="round"
-                          strokeWidth={2}
-                          fill={`url(#${chartId}-temperature-fill)`}
-                          dot={false}
-                          isAnimationActive={false}
-                          activeDot={{ r: 5, fill: "var(--color-temperature)", stroke: "var(--background)", strokeWidth: 2 }}
-                        />
-                      )}
-                      {displayModes.includes('rain') && (
-                        <Area
-                          yAxisId="rain"
-                          type="monotone"
-                          dataKey="rain"
-                          stroke="var(--color-rain)"
-                          strokeLinecap="round"
-                          strokeWidth={2}
-                          fill={`url(#${chartId}-rain-fill)`}
-                          dot={false}
-                          isAnimationActive={false}
-                          activeDot={{ r: 5, fill: "var(--color-rain)", stroke: "var(--background)", strokeWidth: 2 }}
-                        />
-                      )}
-                      {displayModes.includes('wind') && (
-                        <Area
-                          yAxisId="wind"
-                          type="monotone"
-                          dataKey="wind"
-                          stroke="var(--color-wind)"
-                          strokeLinecap="round"
-                          strokeWidth={2}
-                          fill={`url(#${chartId}-wind-fill)`}
-                          dot={false}
-                          isAnimationActive={false}
-                          activeDot={{ r: 5, fill: "var(--color-wind)", stroke: "var(--background)", strokeWidth: 2 }}
-                        />
-                      )}
-                    </ComposedChart>
-                  </ChartContainer>
+              {view === 'chart' && (
+              <div className="absolute inset-0 h-full w-full">
+                {!chartData.length ? <Skeleton className="h-full w-full" /> : (
+                  <Suspense fallback={<Skeleton className="h-full w-full" />}>
+                    <ForecastChart
+                      chartConfig={chartConfig}
+                      chartId={chartId}
+                      data={chartData as ForecastChartPoint[]}
+                      daySeparators={daySeparators}
+                      displayModes={displayModes}
+                      locale={locale}
+                      tempDomain={tempMetrics.domain}
+                      tempTicks={tempMetrics.ticks}
+                      tickFormatter={config[type].tickFormatter}
+                      ticks={type === 'daily' ? dailyTicks : hourlyTicks}
+                      units={units}
+                    />
+                  </Suspense>
                 )}
               </div>
+              )}
 
               {/* List View */}
-              <div
-                className={cn(
-                  "absolute inset-0 flex h-full flex-col gap-1 overflow-hidden transition-opacity duration-300",
-                  view === 'list'
-                    ? "opacity-100"
-                    : "opacity-0 pointer-events-none"
-                )}
-              >
+              {view === 'list' && (
+              <div className="absolute inset-0 flex h-full flex-col gap-1 overflow-hidden">
                 <div className="forecast-card__list-shell min-h-0 flex-1">
                   <div
                     className="forecast-card__list flex h-full cursor-grab touch-auto snap-x snap-mandatory gap-1 overflow-x-auto overflow-y-hidden select-none"
@@ -699,7 +585,7 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
                     {type === 'daily'
                       ? (listData as DailyDataPoint[]).map((day, index) => (
                           <div key={`${day.time}-${index}`} className={cn("h-full shrink-0 snap-start", listItemWidth)}>
-                            <DailyForecastItem
+                            <MemoDailyForecastItem
                               day={day}
                               units={units}
                               chartId={chartId}
@@ -710,7 +596,7 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
                         ))
                       : (listData as HourlyDataPoint[]).map((hour, index) => (
                           <div key={`${hour.time}-${index}`} className={cn("h-full shrink-0 snap-start", listItemWidth)}>
-                            <HourlyForecastItem
+                            <MemoHourlyForecastItem
                               hour={hour}
                               units={units}
                               timezone={weatherData.timezone}
@@ -724,6 +610,7 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
                   </div>
                 </div>
               </div>
+              )}
             </>
           )}
         </div>

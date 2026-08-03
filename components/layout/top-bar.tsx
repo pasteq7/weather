@@ -58,7 +58,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
     setLocationByName,
     setLocationBySuggestion,
     setLocationByCoords,
-    refreshData,
+    refreshDataSilently,
     isInitializing,
     finishInitialization,
     setApiStatus,
@@ -73,6 +73,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
   const [isGeolocating, setIsGeolocating] = useState(false);
   const isGeolocatingRef = useRef(false);
   const [currentTime, setCurrentTime] = useState<string | null>(null);
+  const lastAutoRefreshRef = useRef(Date.now());
 
   const isSearchableLocation = location.name &&
     location.name !== (t('Weather.currentLocation') || 'Current Location') &&
@@ -82,14 +83,43 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
     location.lon !== null;
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (location.name || (location.lat !== null && location.lon !== null)) {
-        refreshData();
-      }
-    }, 3600000);
+    if (!weatherData) return;
+    lastAutoRefreshRef.current = Date.now();
+  }, [weatherData]);
 
-    return () => clearInterval(interval);
-  }, [location, refreshData]);
+  useEffect(() => {
+    if (!location.name && (location.lat === null || location.lon === null)) return;
+
+    let timeoutId: number | undefined;
+    const refreshInterval = 3_600_000;
+
+    const scheduleRefresh = () => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      if (document.hidden) return;
+
+      const elapsed = Date.now() - lastAutoRefreshRef.current;
+      timeoutId = window.setTimeout(() => {
+        lastAutoRefreshRef.current = Date.now();
+        refreshDataSilently();
+        scheduleRefresh();
+      }, Math.max(1_000, refreshInterval - elapsed));
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && Date.now() - lastAutoRefreshRef.current >= refreshInterval) {
+        lastAutoRefreshRef.current = Date.now();
+        refreshDataSilently();
+      }
+      scheduleRefresh();
+    };
+
+    scheduleRefresh();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [location, refreshDataSilently, weatherData]);
 
   useEffect(() => {
     if (!weatherData?.timezone) {
@@ -97,26 +127,46 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
       return;
     }
 
+    const formatter = new Intl.DateTimeFormat([], {
+      timeZone: weatherData.timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: units === 'imperial'
+    });
+    let timeoutId: number | undefined;
+
     const updateTime = () => {
       try {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString([], {
-          timeZone: weatherData.timezone,
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: units === 'imperial'
-        });
-        setCurrentTime(timeString);
+        setCurrentTime(formatter.format(new Date()));
       } catch {
         console.error("Error formatting time for timezone:", weatherData.timezone);
         setCurrentTime(null);
       }
     };
 
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
+    const scheduleNextMinute = () => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      if (document.hidden) return;
 
-    return () => clearInterval(timer);
+      timeoutId = window.setTimeout(() => {
+        updateTime();
+        scheduleNextMinute();
+      }, 60_050 - (Date.now() % 60_000));
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) updateTime();
+      scheduleNextMinute();
+    };
+
+    updateTime();
+    scheduleNextMinute();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [weatherData?.timezone, units]);
 
   const handleGeolocate = useCallback(async (isAuto = false) => {
@@ -211,7 +261,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
       return;
     }
 
-    if (query.length < 3) {
+    if (query.length < 3 || query === (location.name || '').trim()) {
       setSuggestions([]);
       setActiveSuggestionIndex(-1);
       setIsSearchingLocations(false);
@@ -241,7 +291,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [locationInput, locale]);
+  }, [locationInput, locale, location.name]);
 
   const selectSuggestion = useCallback((suggestion: LocationSuggestion) => {
     suppressNextSuggestionSearchRef.current = true;
@@ -313,14 +363,14 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
   return (
     <div className="weather-top-bar relative z-50 flex w-full flex-col gap-2 sm:flex-row sm:items-center">
       {currentTime && (
-        <div className="weather-top-bar__time weather-surface hidden items-center gap-1.5 whitespace-nowrap rounded-md border border-border/25 px-2.5 text-sm font-medium tabular-nums text-muted-foreground backdrop-blur-sm md:flex md:h-9">
+        <div className="weather-top-bar__time weather-surface hidden items-center gap-1.5 whitespace-nowrap rounded-md border border-border/25 px-2.5 text-sm font-medium tabular-nums text-muted-foreground md:flex md:h-9">
           <Clock className="h-3.5 w-3.5 text-chart-2" />
           {currentTime}
         </div>
       )}
 
       <TooltipProvider>
-        <form onSubmit={handleSearch} className="weather-search-form weather-surface relative flex h-10 min-w-0 flex-1 items-center overflow-visible rounded-md border border-border/40 shadow-sm shadow-black/5 backdrop-blur-md sm:h-9">
+        <form onSubmit={handleSearch} className="weather-search-form weather-surface relative flex h-10 min-w-0 flex-1 items-center overflow-visible rounded-md border border-border/40 shadow-sm shadow-black/5 sm:h-9">
           <Button className="weather-search-form__button h-10 w-10 rounded-none sm:h-9 sm:w-9" variant="ghost" size="icon" type="submit" aria-label={t('TopBar.searchPlaceholder')}>
             <Search className="h-4 w-4" />
           </Button>
