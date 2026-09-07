@@ -87,7 +87,7 @@ function DailyForecastItem({ day, units, chartId, itemIndex, locale }: {
             className="weather-icon-container h-full w-full"
             style={{ isolation: 'isolate' }}
           >
-            <CurrentWeatherIcon iconCode={icon} className="h-full w-full" />
+            <CurrentWeatherIcon iconCode={icon} className="h-full w-full" animated={false} />
           </div>
         </div>
         <div className={cn("absolute inset-0 flex items-center justify-center p-1 text-center transition-opacity duration-300", { "opacity-0": !isHovered, "pointer-events-none": !isHovered })}>
@@ -143,7 +143,7 @@ function HourlyForecastItem({
             className="weather-icon-container h-full w-full"
             style={{ isolation: 'isolate' }}
           >
-            <CurrentWeatherIcon iconCode={icon} className="h-full w-full" />
+            <CurrentWeatherIcon iconCode={icon} className="h-full w-full" animated={false} />
           </div>
         </div>
         <div className={cn("absolute inset-0 flex items-center justify-center p-1 text-center transition-opacity duration-300", { "opacity-0": !isHovered, "pointer-events-none": !isHovered })}>

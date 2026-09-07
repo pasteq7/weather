@@ -87,7 +87,7 @@ const CurrentWeatherIcon: FC<CurrentWeatherIconProps> = ({ iconCode, className, 
     let isVisible = true;
 
     const updatePlayback = () => {
-      const shouldPause = document.hidden || reducedMotion.matches || !isVisible;
+      const shouldPause = document.hidden || !document.hasFocus() || reducedMotion.matches || !isVisible;
       if (shouldPause) {
         svg.pauseAnimations?.();
       } else {
@@ -104,12 +104,16 @@ const CurrentWeatherIcon: FC<CurrentWeatherIconProps> = ({ iconCode, className, 
 
     observer?.observe(root);
     document.addEventListener('visibilitychange', updatePlayback);
+    window.addEventListener('blur', updatePlayback);
+    window.addEventListener('focus', updatePlayback);
     reducedMotion.addEventListener('change', updatePlayback);
     updatePlayback();
 
     return () => {
       observer?.disconnect();
       document.removeEventListener('visibilitychange', updatePlayback);
+      window.removeEventListener('blur', updatePlayback);
+      window.removeEventListener('focus', updatePlayback);
       reducedMotion.removeEventListener('change', updatePlayback);
     };
   }, [IconComponent, animated]);
