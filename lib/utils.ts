@@ -29,18 +29,18 @@ export const formatTemperature = (temp: number, units: string): [string, string]
     return [Math.round(temp).toString(), unit];
 };
 
-export const formatWindSpeed = (speed: number, units: string): [string, string] => {
+export const formatWindSpeed = (speed: number | null, units: string): [string, string] => {
   if (speed === null || speed === undefined) return ['--', ''];
   const unit = units === 'imperial' ? WIND_UNIT_MPH : WIND_UNIT_KMH;
   return [Math.round(speed).toString(), unit];
 };
 
-export const formatHumidity = (humidity: number): [string, string] => {
+export const formatHumidity = (humidity: number | null): [string, string] => {
   if (humidity === null || humidity === undefined) return ['--', '%'];
   return [Math.round(humidity).toString(), '%'];
 };
 
-export const formatPressure = (pressure: number, units: string): [string, string] => {
+export const formatPressure = (pressure: number | null, units: string): [string, string] => {
   if (pressure === null || pressure === undefined) return ['--', ''];
   if (units === 'imperial') {
     const pressureInInHg = pressure * 0.02953;
@@ -49,7 +49,7 @@ export const formatPressure = (pressure: number, units: string): [string, string
   return [Math.round(pressure).toString(), 'hPa'];
 };
 
-export const formatVisibility = (visibility: number, units: string): [string, string] => {
+export const formatVisibility = (visibility: number | null, units: string): [string, string] => {
   if (visibility === null || visibility === undefined) return ['--', ''];
   const distanceInKm = visibility / 1000;
   if (units === 'imperial') {

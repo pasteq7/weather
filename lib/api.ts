@@ -1,6 +1,6 @@
 // lib/api.ts
 
-import { WeatherData } from './types';
+import type { WeatherData } from './types';
 
 const GEO_API_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const REVERSE_GEO_API_URL = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
@@ -73,39 +73,92 @@ const fetchJson = async <T>(
   }
 };
 
-const hasNumberArray = (value: unknown) => (
-  Array.isArray(value) && value.every((item) => typeof item === 'number')
-);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
 
-const isWeatherData = (data: unknown): data is WeatherData => {
-  if (!data || typeof data !== 'object') return false;
+const isNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
 
-  const candidate = data as Partial<WeatherData>;
-  const { current, hourly, daily } = candidate;
+const isArrayOfLength = (value: unknown, length: number): value is unknown[] =>
+  Array.isArray(value) && value.length === length;
 
-  return Boolean(
-    typeof candidate.timezone === 'string' &&
-    current &&
-    typeof current.temperature_2m === 'number' &&
-    typeof current.relative_humidity_2m === 'number' &&
-    typeof current.weather_code === 'number' &&
-    typeof current.wind_speed_10m === 'number' &&
-    typeof current.pressure_msl === 'number' &&
-    hourly &&
-    hasNumberArray(hourly.time) &&
-    hasNumberArray(hourly.temperature_2m) &&
-    hasNumberArray(hourly.precipitation_probability) &&
-    hasNumberArray(hourly.weather_code) &&
-    hasNumberArray(hourly.wind_speed_10m) &&
-    hasNumberArray(hourly.visibility) &&
-    daily &&
-    hasNumberArray(daily.time) &&
-    hasNumberArray(daily.weather_code) &&
-    hasNumberArray(daily.temperature_2m_max) &&
-    hasNumberArray(daily.temperature_2m_min) &&
-    hasNumberArray(daily.sunrise) &&
-    hasNumberArray(daily.sunset)
-  );
+// Open-Meteo can return null for a variable or a forecast hour while other
+// variables remain usable. Keep gaps as null instead of rejecting the response.
+export const parseWeatherData = (data: unknown): WeatherData | null => {
+  if (!isRecord(data) || !isRecord(data.current) || !isRecord(data.hourly) || !isRecord(data.daily)) return null;
+  const { current, hourly, daily } = data;
+  const currentTime = current.time;
+  const hourlyTime = hourly.time;
+  const hourlyTemperature = hourly.temperature_2m;
+  const hourlyWeatherCode = hourly.weather_code;
+  const hourlyIsDay = hourly.is_day;
+  const dailyTime = daily.time;
+  const dailyWeatherCode = daily.weather_code;
+  const dailyMax = daily.temperature_2m_max;
+  const dailyMin = daily.temperature_2m_min;
+  const dailySunrise = daily.sunrise;
+  const dailySunset = daily.sunset;
+  if (
+    typeof data.timezone !== 'string' ||
+    !isNumber(currentTime) ||
+    !isNumber(current.temperature_2m) ||
+    !isNumber(current.weather_code) ||
+    !isNumber(current.is_day) ||
+    !Array.isArray(hourlyTime) || hourlyTime.length === 0 ||
+    !isArrayOfLength(hourlyTemperature, hourlyTime.length) ||
+    !isArrayOfLength(hourlyWeatherCode, hourlyTime.length) ||
+    !isArrayOfLength(hourlyIsDay, hourlyTime.length) ||
+    !Array.isArray(dailyTime) || dailyTime.length === 0 ||
+    !isArrayOfLength(dailyWeatherCode, dailyTime.length) ||
+    !isArrayOfLength(dailyMax, dailyTime.length) ||
+    !isArrayOfLength(dailyMin, dailyTime.length)
+  ) return null;
+
+  const hourIndices = hourlyTime.flatMap((time, index) =>
+    isNumber(time) && isNumber(hourlyTemperature[index]) && isNumber(hourlyWeatherCode[index]) && isNumber(hourlyIsDay[index])
+      ? [index] : []);
+  const dayIndices = dailyTime.flatMap((time, index) =>
+    isNumber(time) && isNumber(dailyWeatherCode[index]) && isNumber(dailyMax[index]) &&
+    isNumber(dailyMin[index])
+      ? [index] : []);
+  if (!hourIndices.some((index) => hourlyTime[index] >= currentTime) || dayIndices[0] !== 0) return null;
+
+  const optionalHourly = ['precipitation_probability', 'wind_speed_10m', 'visibility'] as const;
+  const hourlyValues = Object.fromEntries(optionalHourly.map((key) => {
+    const values = hourly[key];
+    return [key, hourIndices.map((index) =>
+      Array.isArray(values) && isNumber(values[index]) ? values[index] : null)];
+  })) as Pick<WeatherData['hourly'], typeof optionalHourly[number]>;
+
+  return {
+    ...data,
+    current: {
+      ...current,
+      apparent_temperature: isNumber(current.apparent_temperature) ? current.apparent_temperature : null,
+      relative_humidity_2m: isNumber(current.relative_humidity_2m) ? current.relative_humidity_2m : null,
+      wind_speed_10m: isNumber(current.wind_speed_10m) ? current.wind_speed_10m : null,
+      pressure_msl: isNumber(current.pressure_msl) ? current.pressure_msl : null,
+    },
+    hourly: {
+      ...hourly,
+      time: hourIndices.map((index) => hourlyTime[index]),
+      temperature_2m: hourIndices.map((index) => hourlyTemperature[index]),
+      weather_code: hourIndices.map((index) => hourlyWeatherCode[index]),
+      is_day: hourIndices.map((index) => hourlyIsDay[index]),
+      ...hourlyValues,
+    },
+    daily: {
+      ...daily,
+      time: dayIndices.map((index) => dailyTime[index]),
+      weather_code: dayIndices.map((index) => dailyWeatherCode[index]),
+      temperature_2m_max: dayIndices.map((index) => dailyMax[index]),
+      temperature_2m_min: dayIndices.map((index) => dailyMin[index]),
+      sunrise: dayIndices.map((index) =>
+        Array.isArray(dailySunrise) && isNumber(dailySunrise[index]) ? dailySunrise[index] : null),
+      sunset: dayIndices.map((index) =>
+        Array.isArray(dailySunset) && isNumber(dailySunset[index]) ? dailySunset[index] : null),
+    },
+  } as unknown as WeatherData;
 };
 
 export const getCoordinatesForCity = async (city: string, signal?: AbortSignal) => {
@@ -217,11 +270,12 @@ export const fetchWeatherData = async (latitude: number, longitude: number, unit
 
   const data = await fetchJson<unknown>(`${WEATHER_API_URL}?${params.toString()}`, 'ERROR_FETCH_WEATHER', 'weather', signal);
 
-  if (!isWeatherData(data)) {
+  const weatherData = parseWeatherData(data);
+  if (!weatherData) {
     throw new WeatherApiError('ERROR_INVALID_WEATHER_DATA', { service: 'weather', reason: 'schema' });
   }
 
-  return data;
+  return weatherData;
 };
 
 export const fetchWeatherByCity = async (city: string, units: string = 'metric', timezone: string = 'auto', signal?: AbortSignal) => {

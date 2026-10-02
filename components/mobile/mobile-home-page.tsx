@@ -40,7 +40,7 @@ export default function MobileHomePage({
   const temperatureUnit = units === 'imperial' ? '°F' : '°C';
 
   const metrics = [
-    { icon: Droplets, value: `${Math.round(data.current.relative_humidity_2m)}%`, label: t('Weather.humidity') },
+    { icon: Droplets, value: data.current.relative_humidity_2m === null ? '--' : `${Math.round(data.current.relative_humidity_2m)}%`, label: t('Weather.humidity') },
     { icon: Wind, value: `${wind} ${windUnit}`, label: t('Weather.windSpeed') },
     { icon: Gauge, value: `${pressure} ${pressureUnit}`, label: t('Weather.pressure') },
     { icon: Ellipsis, value: `${visibility} ${visibilityUnit}`, label: t('Weather.visibility') },
@@ -112,7 +112,8 @@ export default function MobileHomePage({
   );
 }
 
-function formatClock(timestamp: number, timezone: string) {
+function formatClock(timestamp: number | null, timezone: string) {
+  if (timestamp === null) return '--';
   return new Date(timestamp * 1000).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',

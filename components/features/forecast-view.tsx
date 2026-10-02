@@ -371,11 +371,13 @@ export default function ForecastView({ type, weatherData, units }: ForecastViewP
         const current_wind_speed = wind_speed_10m[hourlyIndex];
         const visibility = hourly.visibility[hourlyIndex];
 
-        if (sunrise === undefined || sunset === undefined || temperature === undefined || weather_code === undefined || precipitation_probability === undefined || current_wind_speed === undefined || visibility === undefined) {
+        if (temperature === undefined || weather_code === undefined || precipitation_probability === undefined || current_wind_speed === undefined || visibility === undefined) {
           continue;
         }
 
-        const calculatedIsDay = (hourTimestamp >= sunrise && hourTimestamp < sunset) ? 1 : 0;
+        const calculatedIsDay = sunrise !== null && sunset !== null && sunrise !== undefined && sunset !== undefined
+          ? (hourTimestamp >= sunrise && hourTimestamp < sunset ? 1 : 0)
+          : hourly.is_day[hourlyIndex];
 
         result.push({
           time: hourTimestamp,

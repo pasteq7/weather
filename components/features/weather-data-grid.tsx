@@ -34,8 +34,8 @@ export default function WeatherDataGrid({ weatherData, units }: WeatherDataGridP
   const visibilityValue = currentHourIndex !== -1 ? hourly.visibility[currentHourIndex] : hourly.visibility[0];
   const visibility = formatVisibility(visibilityValue, units);
   
-  const sunrise = formatTime(new Date(daily.sunrise[0] * 1000), timezone, units);
-  const sunset = formatTime(new Date(daily.sunset[0] * 1000), timezone, units);
+  const sunrise = daily.sunrise[0] === null ? '--' : formatTime(new Date(daily.sunrise[0] * 1000), timezone, units);
+  const sunset = daily.sunset[0] === null ? '--' : formatTime(new Date(daily.sunset[0] * 1000), timezone, units);
   const wind = formatWindSpeed(current.wind_speed_10m, units);
 
   const cardData = [

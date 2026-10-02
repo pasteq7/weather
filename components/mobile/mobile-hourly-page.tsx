@@ -78,7 +78,7 @@ export default function MobileHourlyPage({
             <time>{formatHour(hour.time, data.timezone, locale)}</time>
             <MobileWeatherIcon code={hour.code} isDay={hour.isDay} className="mobile-hour-strip__icon" />
             <strong>{Math.round(hour.temp)}°</strong>
-            <span><Droplets />{Math.round(hour.rain)}%</span>
+            <span><Droplets />{hour.rain === null ? '--' : `${Math.round(hour.rain)}%`}</span>
           </article>
         ))}
       </section>

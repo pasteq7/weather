@@ -14,20 +14,20 @@ export interface WeatherData {
   current: {
     time: number;
     temperature_2m: number;
-    apparent_temperature?: number;
-    relative_humidity_2m: number;
+    apparent_temperature?: number | null;
+    relative_humidity_2m: number | null;
     is_day: number;
     weather_code: number;
-    wind_speed_10m: number; // No longer optional
-    pressure_msl: number;   // No longer optional
+    wind_speed_10m: number | null;
+    pressure_msl: number | null;
   };
   hourly: {
     time: number[];
     temperature_2m: number[];
-    precipitation_probability: number[];
+    precipitation_probability: (number | null)[];
     weather_code: number[];
-    wind_speed_10m: number[]; // No longer optional
-    visibility: number[];
+    wind_speed_10m: (number | null)[];
+    visibility: (number | null)[];
     is_day: number[];
   };
   daily: {
@@ -35,8 +35,8 @@ export interface WeatherData {
     weather_code: number[];
     temperature_2m_max: number[];
     temperature_2m_min: number[];
-    sunrise: number[];
-    sunset: number[];
+    sunrise: (number | null)[];
+    sunset: (number | null)[];
   };
 }
 
@@ -50,10 +50,10 @@ export interface DailyDataPoint {
 export interface HourlyDataPoint {
   time: number;
   temperature_2m: number;
-  precipitation_probability: number;
+  precipitation_probability: number | null;
   weather_code: number;
-  wind_speed_10m: number; // No longer optional
-  visibility: number;
+  wind_speed_10m: number | null;
+  visibility: number | null;
   is_day: number;
 }
 

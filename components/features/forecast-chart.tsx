@@ -5,8 +5,8 @@ import { formatTemperature, formatWindSpeed } from '@/lib/utils';
 export interface ForecastChartPoint {
   time: number;
   temperature: number;
-  rain: number;
-  wind: number;
+  rain: number | null;
+  wind: number | null;
 }
 
 interface ForecastChartProps {

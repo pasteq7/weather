@@ -25,10 +25,11 @@ export default function MobileDailyPage({
       <section className="mobile-daily-list">
         {days.map((time, index) => {
           const { descriptionKey } = mapWmoToWeather(data.daily.weather_code[index], 1);
-          const rainIndex = data.hourly.time.findIndex((hour) => hour >= time);
-          const rain = rainIndex >= 0
-            ? Math.max(...data.hourly.precipitation_probability.slice(rainIndex, rainIndex + 24))
-            : 0;
+          const nextDay = data.daily.time[index + 1] ?? time + 86400;
+          const rainValues = data.hourly.time.flatMap((hour, hourIndex) =>
+            hour >= time && hour < nextDay ? [data.hourly.precipitation_probability[hourIndex]] : []);
+          const rain = rainValues.length && rainValues.every((value): value is number => value !== null)
+            ? `${Math.max(...rainValues)}%` : '--';
 
           return (
             <article key={time}>
@@ -41,7 +42,7 @@ export default function MobileDailyPage({
                 <strong>{Math.round(data.daily.temperature_2m_max[index])}° <span>/ {Math.round(data.daily.temperature_2m_min[index])}°</span></strong>
                 <small>{t(`WMO.${descriptionKey}`)}</small>
               </div>
-              <span className="mobile-daily-list__rain"><Droplets />{rain}%</span>
+              <span className="mobile-daily-list__rain"><Droplets />{rain}</span>
             </article>
           );
         })}
