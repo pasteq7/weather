@@ -13,6 +13,7 @@ interface ErrorDisplayProps {
   onDismiss?: () => void;
   onRetry?: () => void;
   showInline?: boolean;
+  compact?: boolean;
 }
 
 export default function ErrorDisplay({
@@ -21,6 +22,7 @@ export default function ErrorDisplay({
   onDismiss,
   onRetry,
   showInline = false,
+  compact = false,
 }: ErrorDisplayProps) {
   const t = useTranslations('Errors');
   const lastToastRef = useRef<string | null>(null);
@@ -54,15 +56,15 @@ export default function ErrorDisplay({
           <div className="min-w-0">
             <p className="font-semibold leading-5 text-destructive">{error.title}</p>
             <p className="leading-5 text-destructive/85">{error.message}</p>
-            <div className="mt-1 flex flex-wrap gap-1.5 text-[0.68rem] font-semibold leading-4 text-muted-foreground">
+            {!compact && <div className="mt-1 flex flex-wrap gap-1.5 text-[0.68rem] font-semibold leading-4 text-muted-foreground">
               <span className="rounded border border-border/25 bg-background/15 px-1.5 py-0.5">{t('failed')}: {sourceLabel}</span>
               <span className="rounded border border-border/25 bg-background/15 px-1.5 py-0.5">{t('reasonLabel')}: {reasonLabel}</span>
               <span className="rounded border border-border/25 bg-background/15 px-1.5 py-0.5">{t('code')}: {error.code}</span>
               {error.status && (
                 <span className="rounded border border-border/25 bg-background/15 px-1.5 py-0.5">{t('status')}: {error.status}</span>
               )}
-            </div>
-            <p className="mt-1 text-xs leading-4 text-muted-foreground">{error.detail}</p>
+            </div>}
+            {!compact && <p className="mt-1 text-xs leading-4 text-muted-foreground">{error.detail}</p>}
           </div>
         </div>
         <div className="flex shrink-0 items-center justify-end gap-1.5">

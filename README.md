@@ -8,7 +8,9 @@ A responsive weather dashboard built with React and Vite. Search for a place or 
 
 - Shows current temperature, feels-like temperature, daily high/low, humidity, wind, pressure, visibility, sunrise, and sunset.
 - Provides a 24-hour hourly forecast and a 14-day daily forecast. Desktop supports chart and compact-list views; mobile offers an hourly temperature chart with optional rain and wind lines, plus a focused daily list.
-- Searches Open-Meteo locations with keyboard-friendly suggestions and lets you save favorite places.
+- Searches Open-Meteo locations with keyboard-friendly suggestions and lets you save favorite places on desktop and mobile. New favorites store coordinates so reopening a place does not require another city lookup; existing name-only favorites upgrade after a successful lookup.
+- Restores the last successfully loaded location on the next visit, while keeping device location available through the location button.
+- Refreshes weather hourly while the app is visible, checks for stale data when returning to the app, and provides an explicit refresh button with the last successful update time. A failed refresh keeps the previous forecast visible with a retryable error.
 - Includes an embedded Windy precipitation radar centered on the selected location.
 - Has a dedicated mobile bottom navigation and Settings page for language, units, theme (light, dark, or system), and weather-icon style.
 - Supports English and French, metric and imperial units, light, dark, and system themes, and three weather-icon styles.
@@ -42,6 +44,7 @@ Vite prints the local URL when it starts (usually `http://localhost:5173`). No e
 ```sh
 npm run build    # Type-check and create a production build
 npm run lint     # Check source files with ESLint
+npm test         # Run weather parsing, location storage, and refresh scheduling checks
 npm run preview  # Serve the production build locally
 ```
 

@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import CurrentWeatherIcon from "@/components/icons/current-weather-icon";
 import { formatTemperature, mapWmoToWeather } from "@/lib/utils";
 import { WeatherData } from "@/lib/types";
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { useAppContext } from '@/app/context/AppContext';
 
 interface TodayWeatherCardProps {
   weatherData: WeatherData;
@@ -16,21 +16,11 @@ interface TodayWeatherCardProps {
 
 export default function TodayWeatherCard({ weatherData, units, location }: TodayWeatherCardProps) {
   const t = useTranslations();
-  const [lastFetchedTime, setLastFetchedTime] = useState('');
-
-  useEffect(() => {
-    // This effect now runs whenever new weatherData is received.
-    if (weatherData) {
-      // Get the current time from the user's computer
-      const now = new Date();
-      const time = now.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: units === 'imperial',
-      });
-      setLastFetchedTime(time);
-    }
-  }, [weatherData, units]); // Re-run when data or units change
+  const locale = useLocale();
+  const { lastUpdatedAt } = useAppContext();
+  const lastFetchedTime = lastUpdatedAt === null ? '' : new Intl.DateTimeFormat(locale, {
+    hour: '2-digit', minute: '2-digit',
+  }).format(lastUpdatedAt);
 
   if (!weatherData) {
     return (

@@ -12,7 +12,8 @@
     "favoritesTitle": "Favorites",
     "removeFavorite": "Remove {location} from favorites",
     "noFavorites": "No favorites yet.",
-    "addFavoriteTooltip": "Add to location to Favorites",
+    "addFavoriteTooltip": "Add location to favorites",
+    "saveCurrentLocation": "Save current location",
     "toggleThemeTooltip": "Toggle Theme",
     "showRadarTooltip": "Show radar map",
     "showWeatherTooltip": "Show weather dashboard",
@@ -28,6 +29,12 @@
     "fahrenheitTooltip": "Fahrenheit",
     "english": "English",
     "french": "Français"
+  },
+  "Refresh": {
+    "refresh": "Refresh",
+    "refreshing": "Refreshing weather…",
+    "updatedAt": "Updated at {time}",
+    "showingPrevious": "Showing previous weather for {location} · updated at {time}"
   },
   "Toasts": {
     "refreshingData": "Refreshing weather data...",

@@ -7,6 +7,9 @@ import { fetchWeatherByCity, fetchWeatherData, getCityNameFromCoordinates, Weath
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { MeteoconStyle } from '@/lib/meteocons';
+import { hasValidCoordinates, LOCATION_STORAGE_KEY, readSavedLocation, readFavorites, resolveLegacyFavorite,
+  FAVORITES_STORAGE_KEY, FAVORITES_CHANGED_EVENT } from '@/lib/location-preferences';
+import { startRefreshScheduler } from '@/lib/refresh-scheduler';
 
 export type ApiStatusValue = 'operational' | 'partial' | 'outage' | 'pending';
 
@@ -59,8 +62,10 @@ type AppErrorInput = AppError | {
 interface AppContextType {
   location: Location;
   units: 'metric' | 'imperial';
+  weatherUnits: 'metric' | 'imperial';
   iconStyle: MeteoconStyle;
   weatherData: WeatherData | null;
+  lastUpdatedAt: number | null;
   isLoading: boolean;
   error: AppError | null;
   isInitializing: boolean;
@@ -69,7 +74,7 @@ interface AppContextType {
   setIconStyle: (style: MeteoconStyle) => void;
   setLocationByName: (name: string) => void;
   setLocationBySuggestion: (location: { name: string; lat: number; lon: number }) => void;
-  setLocationByCoords: (lat: number, lon: number) => void;
+  setLocationByCoords: (lat: number, lon: number, onlyIfUnset?: boolean) => void;
   refreshData: () => void;
   refreshDataSilently: () => void;
   finishInitialization: () => void;
@@ -117,13 +122,15 @@ const getInitialUnits = (): 'metric' | 'imperial' => {
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const t = useTranslations();
-  const [location, setLocation] = useState<Location>({ lat: null, lon: null, name: null });
+  const [location, setLocation] = useState<Location>(() => readSavedLocation() ?? { lat: null, lon: null, name: null });
   const [units, setUnits] = useState<'metric' | 'imperial'>(getInitialUnits);
+  const [weatherUnits, setWeatherUnits] = useState<'metric' | 'imperial'>(units);
   const [iconStyle, setIconStyleState] = useState<MeteoconStyle>(getInitialIconStyle);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<AppError | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(() => !location.name && !hasCoordinates(location));
   const [apiStatus, setApiStatusState] = useState<ApiStatuses>({
     openMeteo: { status: 'operational' },
     reverseGeo: { status: 'operational' },
@@ -133,6 +140,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
   const activeFetchIdRef = useRef(0);
   const activeFetchControllerRef = useRef<AbortController | null>(null);
+  const lastAttemptRef = useRef(Date.now());
+  const resolvedLocationRef = useRef<{ request: Location; resolved: Location } | null>(null);
 
   const setApiStatus = useCallback((service: keyof ApiStatuses, status: ApiStatus) => {
     setApiStatusState(prev => {
@@ -211,15 +220,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     activeFetchControllerRef.current?.abort();
     const controller = new AbortController();
     activeFetchControllerRef.current = controller;
+    lastAttemptRef.current = Date.now();
     setIsLoading(true);
     setError(null);
 
     try {
       const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'auto';
       let data: WeatherData;
-      let name = currentLocation.name;
-      let lat = currentLocation.lat;
-      let lon = currentLocation.lon;
+      const resolvedLocation = resolvedLocationRef.current?.request === currentLocation
+        ? resolvedLocationRef.current.resolved : currentLocation;
+      let name = resolvedLocation.name;
+      let lat = resolvedLocation.lat;
+      let lon = resolvedLocation.lon;
       let nonBlockingError: AppError | null = null;
 
       if (lat !== null && lon !== null) {
@@ -254,6 +266,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (fetchId !== activeFetchIdRef.current) return;
 
       setWeatherData(completeWeatherData);
+      setWeatherUnits(currentUnits);
+      setLastUpdatedAt(Date.now());
+      const savedLocation = { name, lat, lon };
+      const reusableLocation = nonBlockingError ? { ...savedLocation, name: null } : savedLocation;
+      resolvedLocationRef.current = { request: currentLocation, resolved: reusableLocation };
+      try {
+        window.localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(reusableLocation));
+        const favorites = readFavorites();
+        if (favorites.some((item) => item.lat === null && item.name === currentLocation.name)) {
+          window.localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(resolveLegacyFavorite(favorites, currentLocation.name, savedLocation)));
+          window.dispatchEvent(new Event(FAVORITES_CHANGED_EVENT));
+        }
+      } catch {
+        // Weather remains usable when browser storage is unavailable.
+      }
       setError(nonBlockingError);
 
       setApiStatus('openMeteo', { status: 'operational' });
@@ -284,7 +311,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         status: weatherError?.status,
         reason: weatherError?.reason ?? 'unknown',
       }));
-      setWeatherData(previousData => previousData);
     } finally {
       if (fetchId === activeFetchIdRef.current) {
         activeFetchControllerRef.current = null;
@@ -304,25 +330,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const setLocationByName = useCallback((name: string) => {
     if (name && name.trim()) {
       setLocation({ name: name.trim(), lat: null, lon: null });
+      setIsInitializing(false);
       setError(null);
     }
   }, []);
 
-  const setLocationByCoords = useCallback((lat: number, lon: number) => {
-    if (Number.isFinite(lat) && Number.isFinite(lon)) {
-      setLocation({ lat, lon, name: null });
+  const setLocationByCoords = useCallback((lat: number, lon: number, onlyIfUnset = false) => {
+    if (hasValidCoordinates(lat, lon)) {
+      setLocation(previous => onlyIfUnset && (previous.name || hasCoordinates(previous)) ? previous : { lat, lon, name: null });
+      setIsInitializing(false);
       setError(null);
     }
   }, []);
 
   const setLocationBySuggestion = useCallback(({ name, lat, lon }: { name: string; lat: number; lon: number }) => {
-    if (name.trim() && Number.isFinite(lat) && Number.isFinite(lon)) {
+    if (name.trim() && hasValidCoordinates(lat, lon)) {
       setLocation({ name: name.trim(), lat, lon });
+      setIsInitializing(false);
       setError(null);
     }
   }, []);
 
   const refreshData = useCallback(() => {
+    if (activeFetchControllerRef.current) return;
     if (location.name || hasCoordinates(location)) {
       toast.info(t('Toasts.refreshingData') || 'Refreshing data...');
       fetchAndSetWeather(location, units);
@@ -330,16 +360,39 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [location, units, fetchAndSetWeather, t]);
 
   const refreshDataSilently = useCallback(() => {
+    if (activeFetchControllerRef.current) return;
     if (location.name || hasCoordinates(location)) {
       fetchAndSetWeather(location, units);
     }
   }, [location, units, fetchAndSetWeather]);
 
+  useEffect(() => {
+    if (!location.name && !hasCoordinates(location)) return;
+    return startRefreshScheduler({
+      refresh: refreshDataSilently,
+      isBusy: () => Boolean(activeFetchControllerRef.current),
+      lastAttempt: () => lastAttemptRef.current,
+      isHidden: () => document.hidden,
+      schedule: (callback, delay) => window.setTimeout(callback, delay),
+      cancel: (id) => window.clearTimeout(id),
+      listen: (callback) => {
+        document.addEventListener('visibilitychange', callback);
+        window.addEventListener('online', callback);
+        return () => {
+          document.removeEventListener('visibilitychange', callback);
+          window.removeEventListener('online', callback);
+        };
+      },
+    });
+  }, [location, refreshDataSilently]);
+
   const contextValue = useMemo<AppContextType>(() => ({
     location,
     units,
+    weatherUnits,
     iconStyle,
     weatherData,
+    lastUpdatedAt,
     isLoading,
     error,
     isInitializing,
@@ -357,8 +410,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }), [
     location,
     units,
+    weatherUnits,
     iconStyle,
     weatherData,
+    lastUpdatedAt,
     isLoading,
     error,
     isInitializing,

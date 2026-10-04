@@ -13,6 +13,7 @@
     "removeFavorite": "Retirer {location} des favoris",
     "noFavorites": "Aucun favori pour le moment.",
     "addFavoriteTooltip": "Ajouter le lieu aux favoris",
+    "saveCurrentLocation": "Enregistrer le lieu actuel",
     "toggleThemeTooltip": "Changer de thème",
     "showRadarTooltip": "Afficher la carte radar",
     "showWeatherTooltip": "Afficher le tableau météo",
@@ -28,6 +29,12 @@
     "fahrenheitTooltip": "Fahrenheit",
     "english": "Anglais",
     "french": "Français"
+  },
+  "Refresh": {
+    "refresh": "Actualiser",
+    "refreshing": "Actualisation de la météo…",
+    "updatedAt": "Mis à jour à {time}",
+    "showingPrevious": "Météo précédente pour {location} · mise à jour à {time}"
   },
   "Toasts": {
     "refreshingData": "Actualisation des données météo...",

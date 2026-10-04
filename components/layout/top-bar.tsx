@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import type { MeteoconStyle } from '@/lib/meteocons';
 import { LocationSuggestion, searchLocationSuggestions } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
+import { locationKey, type FavoriteLocation } from '@/lib/location-preferences';
 
 interface SimplePosition {
   coords: {
@@ -58,7 +59,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
     setLocationByName,
     setLocationBySuggestion,
     setLocationByCoords,
-    refreshDataSilently,
+    isLoading,
     isInitializing,
     finishInitialization,
     setApiStatus,
@@ -73,53 +74,14 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
   const [isGeolocating, setIsGeolocating] = useState(false);
   const isGeolocatingRef = useRef(false);
   const [currentTime, setCurrentTime] = useState<string | null>(null);
-  const lastAutoRefreshRef = useRef(Date.now());
 
-  const isSearchableLocation = location.name &&
-    location.name !== (t('Weather.currentLocation') || 'Current Location') &&
-    location.name !== (t('Weather.unknownLocation') || 'Unknown Location');
+  const currentPlace: FavoriteLocation | null = weatherData?.name && weatherData.latitude !== undefined && weatherData.longitude !== undefined
+    ? { name: weatherData.name, lat: weatherData.latitude, lon: weatherData.longitude } : null;
+  const savedPlace = currentPlace && favorites.find((item) => locationKey(item) === locationKey(currentPlace));
+  const isSearchableLocation = Boolean(currentPlace);
   const isUsingCurrentLocation = location.name === null &&
     location.lat !== null &&
     location.lon !== null;
-
-  useEffect(() => {
-    if (!weatherData) return;
-    lastAutoRefreshRef.current = Date.now();
-  }, [weatherData]);
-
-  useEffect(() => {
-    if (!location.name && (location.lat === null || location.lon === null)) return;
-
-    let timeoutId: number | undefined;
-    const refreshInterval = 3_600_000;
-
-    const scheduleRefresh = () => {
-      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
-      if (document.hidden) return;
-
-      const elapsed = Date.now() - lastAutoRefreshRef.current;
-      timeoutId = window.setTimeout(() => {
-        lastAutoRefreshRef.current = Date.now();
-        refreshDataSilently();
-        scheduleRefresh();
-      }, Math.max(1_000, refreshInterval - elapsed));
-    };
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden && Date.now() - lastAutoRefreshRef.current >= refreshInterval) {
-        lastAutoRefreshRef.current = Date.now();
-        refreshDataSilently();
-      }
-      scheduleRefresh();
-    };
-
-    scheduleRefresh();
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [location, refreshDataSilently, weatherData]);
 
   useEffect(() => {
     if (!weatherData?.timezone) {
@@ -212,7 +174,7 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
         if (isAuto) finishInitialization();
         setApiStatus('geolocation', { status: 'operational' });
         reportError(null);
-        setLocationByCoords(position.coords.latitude, position.coords.longitude);
+        setLocationByCoords(position.coords.latitude, position.coords.longitude, isAuto);
         isGeolocatingRef.current = false;
         setIsGeolocating(false);
         return t('Toasts.locationFound');
@@ -349,11 +311,11 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
     const nextTheme = activeTheme === 'dark' ? 'light' : 'dark';
 
     setTheme(nextTheme);
-    setIconStyle(nextTheme === 'light' ? 'monochrome' : 'line');
   };
 
-  const handleFavoriteSelect = (fav: string) => {
-    setLocationByName(fav);
+  const handleFavoriteSelect = (fav: FavoriteLocation) => {
+    if (fav.lat !== null && fav.lon !== null) setLocationBySuggestion({ name: fav.name, lat: fav.lat, lon: fav.lon });
+    else setLocationByName(fav.name);
   };
 
   if (isInitializing) {
@@ -405,21 +367,21 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
                 {favorites.length > 0 ? (
                   <ul className="grid max-h-60 gap-0.5 overflow-y-auto">
                     {favorites.map(fav => (
-                      <li key={fav} className="flex min-w-0 items-center gap-1 rounded-md hover:bg-secondary/55">
+                      <li key={locationKey(fav)} className="flex min-w-0 items-center gap-1 rounded-md hover:bg-secondary/55">
                         <Button
                           variant="ghost"
                           className="h-9 min-w-0 flex-1 justify-start truncate px-2 text-left font-medium"
-                          title={fav}
+                          title={fav.name}
                           onClick={() => handleFavoriteSelect(fav)}
                         >
-                          {fav}
+                          {fav.name}
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           className="size-8 shrink-0"
-                          aria-label={t('TopBar.removeFavorite', { location: fav })}
-                          title={t('TopBar.removeFavorite', { location: fav })}
+                          aria-label={t('TopBar.removeFavorite', { location: fav.name })}
+                          title={t('TopBar.removeFavorite', { location: fav.name })}
                           onClick={() => removeFavorite(fav)}
                         >
                           <X className="h-4 w-4" />
@@ -508,13 +470,16 @@ export default function TopBar({ activeView, onViewChange }: TopBarProps) {
 
           {isSearchableLocation && (
             <Tooltip>
-              <TooltipTrigger asChild><Button className="h-10 w-full sm:h-9 sm:w-9" variant="outline" size="icon" onClick={() => addFavorite(location.name!)}><Star className="h-4 w-4" /></Button></TooltipTrigger>
-              <TooltipContent><p>{t('TopBar.addFavoriteTooltip')}</p></TooltipContent>
+              <TooltipTrigger asChild><Button className="h-10 w-full sm:h-9 sm:w-9" variant="outline" size="icon" disabled={isLoading}
+                aria-label={savedPlace ? t('TopBar.removeFavorite', { location: savedPlace.name }) : t('TopBar.addFavoriteTooltip')}
+                aria-pressed={Boolean(savedPlace)} onClick={() => currentPlace && (savedPlace ? removeFavorite(savedPlace) : addFavorite(currentPlace))}>
+                <Star className="h-4 w-4" fill={savedPlace ? 'currentColor' : 'none'} /></Button></TooltipTrigger>
+              <TooltipContent><p>{savedPlace ? t('TopBar.removeFavorite', { location: savedPlace.name }) : t('TopBar.addFavoriteTooltip')}</p></TooltipContent>
             </Tooltip>
           )}
 
           <Tooltip>
-            <TooltipTrigger asChild><Button className="h-10 w-full sm:h-9 sm:w-9" variant="outline" size="icon" onClick={handleThemeToggle}><Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" /><Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" /></Button></TooltipTrigger>
+            <TooltipTrigger asChild><Button className="h-10 w-full sm:h-9 sm:w-9" variant="outline" size="icon" aria-label={t('TopBar.toggleThemeTooltip')} onClick={handleThemeToggle}><Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" /><Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" /></Button></TooltipTrigger>
             <TooltipContent><p>{t('TopBar.toggleThemeTooltip')}</p></TooltipContent>
           </Tooltip>
 

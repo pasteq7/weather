@@ -3,6 +3,7 @@ import { LocateFixed, Search } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { LocationSuggestion, searchLocationSuggestions } from '@/lib/api';
 import type { MobileLabels } from './mobile-types';
+import MobileFavorites from './mobile-favorites';
 
 export default function MobileSearch({
   currentLocation,
@@ -132,7 +133,8 @@ export default function MobileSearch({
         aria-controls={listId}
         aria-activedescendant={activeSuggestionIndex >= 0 ? `${listId}-${activeSuggestionIndex}` : undefined}
       />
-      <button type="button" aria-label={labels.locate} onClick={onLocate}>
+      <MobileFavorites />
+      <button className="mobile-search__locate" type="button" aria-label={labels.locate} onClick={() => onLocate()}>
         <LocateFixed aria-hidden="true" />
       </button>
       {(suggestions.length > 0 || isSearching) && (

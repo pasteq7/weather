@@ -3,6 +3,7 @@ import TodayWeatherCard from '@/components/features/today-weather-card';
 import WeatherDataGrid from '@/components/features/weather-data-grid';
 import ForecastView from '@/components/features/forecast-view';
 import ErrorDisplay from '@/components/features/error-display';
+import RefreshStatus from '@/components/features/refresh-status';
 import LoadingSkeleton from '@/app/Loading';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ interface HomePageProps {
 
 export default function HomePage({ activeView }: HomePageProps) {
   const t = useTranslations();
-  const { weatherData, units, isLoading, error, isInitializing, refreshData, reportError } = useAppContext();
+  const { weatherData, weatherUnits: units, isLoading, error, isInitializing, refreshData, reportError } = useAppContext();
 
   const showSkeleton = isInitializing || (isLoading && !weatherData);
 
@@ -27,6 +28,7 @@ export default function HomePage({ activeView }: HomePageProps) {
     return (
       <main className="min-h-0 overflow-hidden">
         <div className="weather-radar-dashboard flex h-full min-h-0 flex-col gap-2.5 overflow-hidden pb-1 pr-1 min-[72rem]:pr-0">
+          <RefreshStatus />
           <Suspense fallback={<div className="weather-surface min-h-0 flex-1 rounded-lg border border-border/25" aria-busy="true" />}>
             <RadarMap />
           </Suspense>
@@ -60,6 +62,7 @@ export default function HomePage({ activeView }: HomePageProps) {
       ) : weatherData ? (
         <main className="min-h-0 overflow-hidden">
           <div className="weather-dashboard flex h-full min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain pb-1 pr-1 min-[72rem]:overflow-hidden min-[72rem]:pr-0">
+            <RefreshStatus />
             <ErrorDisplay
               error={error}
               isRetrying={isLoading}

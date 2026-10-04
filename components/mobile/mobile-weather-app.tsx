@@ -8,6 +8,8 @@ import { useAppContext } from '@/app/context/AppContext';
 import MobileHomePage from './mobile-home-page';
 import MobileNavigation from './mobile-navigation';
 import MobileSearch from './mobile-search';
+import RefreshStatus from '@/components/features/refresh-status';
+import ErrorDisplay from '@/components/features/error-display';
 import type { MobileLabels, MobileView } from './mobile-types';
 
 const MobileDailyPage = lazy(() => import('./mobile-daily-page'));
@@ -23,7 +25,7 @@ export default function MobileWeatherApp() {
   const locale = useLocale();
   const {
     weatherData,
-    units,
+    weatherUnits: units,
     isLoading,
     isInitializing,
     error,
@@ -67,7 +69,7 @@ export default function MobileWeatherApp() {
         if (isAuto) finishInitialization();
         setApiStatus('geolocation', { status: 'operational' });
         reportError(null);
-        setLocationByCoords(position.coords.latitude, position.coords.longitude);
+        setLocationByCoords(position.coords.latitude, position.coords.longitude, isAuto);
         return t('Toasts.locationFound');
       },
       error: (error: Error | GeolocationPositionError) => {
@@ -128,8 +130,10 @@ export default function MobileWeatherApp() {
   }, [activeView, changeView]);
 
   let content;
-  if (!weatherData) {
-    const isFindingLocation = isInitializing && !error;
+  if (activeView === 'settings') {
+    content = <MobileSettingsPage labels={labels} onBack={() => changeView('home')} />;
+  } else if (!weatherData) {
+    const isFindingLocation = (isInitializing || isLoading) && !error;
     content = (
       <div className="mobile-empty-state">
         <MobileSearch
@@ -143,7 +147,7 @@ export default function MobileWeatherApp() {
         <h1>{error?.title || (isFindingLocation ? t('Metadata.title') : t('Weather.noLocationTitle'))}</h1>
         <p>{error?.message || (isFindingLocation ? t('Weather.findingLocalForecast') : t('Weather.noLocationDescription'))}</p>
         {error?.canRetry && (
-          <button className="mobile-empty-state__retry" type="button" onClick={refreshData}>
+          <button className="mobile-empty-state__retry" type="button" onClick={refreshData} disabled={isLoading}>
             <RefreshCw /> {t('Errors.retry')}
           </button>
         )}
@@ -155,8 +159,6 @@ export default function MobileWeatherApp() {
     content = <MobileDailyPage data={weatherData} labels={labels} onBack={() => changeView('home')} />;
   } else if (activeView === 'radar') {
     content = <MobileRadarPage labels={labels} onBack={() => changeView('home')} />;
-  } else if (activeView === 'settings') {
-    content = <MobileSettingsPage labels={labels} onBack={() => changeView('home')} />;
   } else {
     content = (
       <MobileHomePage
@@ -179,6 +181,13 @@ export default function MobileWeatherApp() {
         onPointerUp={handlePointerUp}
         onPointerCancel={() => { swipeStart.current = null; }}
       >
+        {weatherData && activeView !== 'settings' && (
+          <div className="mobile-weather-feedback">
+            <RefreshStatus />
+            <ErrorDisplay error={error} isRetrying={isLoading} onDismiss={() => reportError(null)}
+              onRetry={refreshData} showInline compact />
+          </div>
+        )}
         <div className="mobile-page-transition" data-direction={transitionDirection} key={activeView}>
           <Suspense fallback={<div className="mobile-empty-state" aria-busy="true"><span className="mobile-loader" /></div>}>
             {content}

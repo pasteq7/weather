@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --experimental-strip-types --test lib/*.test.mjs",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "android:sync": "npm run build && cap sync android",

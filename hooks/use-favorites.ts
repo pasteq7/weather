@@ -1,50 +1,54 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-
-const FAVORITES_STORAGE_KEY = 'favoriteLocations';
+import {
+  FAVORITES_STORAGE_KEY, FAVORITES_CHANGED_EVENT, readFavorites,
+  locationKey, type FavoriteLocation,
+} from '@/lib/location-preferences';
 
 export const useFavorites = () => {
   const t = useTranslations('Toasts');
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteLocation[]>(readFavorites);
 
   useEffect(() => {
-    try {
-      const storedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
-      if (storedFavorites) {
-        setFavorites(JSON.parse(storedFavorites));
-      }
-    } catch (error) {
-      console.error("Could not parse favorites from localStorage", error);
-      setFavorites([]);
-    }
+    const sync = () => setFavorites(readFavorites());
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === FAVORITES_STORAGE_KEY || event.key === null) sync();
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener(FAVORITES_CHANGED_EVENT, sync);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(FAVORITES_CHANGED_EVENT, sync);
+    };
   }, []);
 
-  const saveFavorites = useCallback((items: string[]) => {
+  const saveFavorites = useCallback((items: FavoriteLocation[]) => {
     try {
       localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(items));
       setFavorites(items);
-    } catch (error) {
-      console.error("Could not save favorites to localStorage", error);
+      window.dispatchEvent(new Event(FAVORITES_CHANGED_EVENT));
+      return true;
+    } catch {
       toast.error(t('saveFavoriteError'));
+      return false;
     }
   }, [t]);
 
-  const addFavorite = useCallback((location: string) => {
-    if (location && !favorites.includes(location)) {
-      const newFavorites = [...favorites, location];
-      saveFavorites(newFavorites);
-      toast.success(t('addFavoriteSuccess', { location }));
-    } else {
-      toast.info(t('addFavoriteInfo', { location }));
+  const addFavorite = useCallback((place: FavoriteLocation) => {
+    const items = readFavorites();
+    if (items.some((item) => locationKey(item) === locationKey(place))) {
+      toast.info(t('addFavoriteInfo', { location: place.name }));
+    } else if (saveFavorites([...items, place])) {
+      toast.success(t('addFavoriteSuccess', { location: place.name }));
     }
-  }, [favorites, saveFavorites, t]);
+  }, [saveFavorites, t]);
 
-  const removeFavorite = useCallback((location: string) => {
-    const newFavorites = favorites.filter(fav => fav !== location);
-    saveFavorites(newFavorites);
-    toast.info(t('removeFavoriteInfo', { location }));
-  }, [favorites, saveFavorites, t]);
+  const removeFavorite = useCallback((place: FavoriteLocation) => {
+    if (saveFavorites(readFavorites().filter((item) => locationKey(item) !== locationKey(place)))) {
+      toast.info(t('removeFavoriteInfo', { location: place.name }));
+    }
+  }, [saveFavorites, t]);
 
   return { favorites, addFavorite, removeFavorite };
 };
