@@ -1,4 +1,4 @@
-import { FC, memo, useEffect, useId, useLayoutEffect, useRef } from 'react';
+import { FC, memo, useId, useLayoutEffect, useRef } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { cn } from '@/lib/utils';
 import { currentWeatherIconNames, getMeteocon } from '@/lib/meteocons';
@@ -76,7 +76,8 @@ const CurrentWeatherIcon: FC<CurrentWeatherIconProps> = ({ iconCode, className, 
     });
   }, [IconComponent, animated]);
 
-  useEffect(() => {
+  // Apply the focus guard before the first paint, including mounts in an inactive window.
+  useLayoutEffect(() => {
     if (!animated) return;
 
     const root = iconRef.current;
