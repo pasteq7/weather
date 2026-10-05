@@ -8,7 +8,6 @@ import { useAppContext } from '@/app/context/AppContext';
 import MobileHomePage from './mobile-home-page';
 import MobileNavigation from './mobile-navigation';
 import MobileSearch from './mobile-search';
-import RefreshStatus from '@/components/features/refresh-status';
 import ErrorDisplay from '@/components/features/error-display';
 import type { MobileLabels, MobileView } from './mobile-types';
 
@@ -181,9 +180,8 @@ export default function MobileWeatherApp() {
         onPointerUp={handlePointerUp}
         onPointerCancel={() => { swipeStart.current = null; }}
       >
-        {weatherData && activeView !== 'settings' && (
+        {weatherData && error && activeView !== 'settings' && (
           <div className="mobile-weather-feedback">
-            <RefreshStatus />
             <ErrorDisplay error={error} isRetrying={isLoading} onDismiss={() => reportError(null)}
               onRetry={refreshData} showInline compact />
           </div>

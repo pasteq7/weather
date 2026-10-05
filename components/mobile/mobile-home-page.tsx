@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import type { WeatherData } from '@/lib/types';
 import { formatPressure, formatVisibility, formatWindSpeed, mapWmoToWeather } from '@/lib/utils';
 import CurrentWeatherIcon from '@/components/icons/current-weather-icon';
+import RefreshControl from '@/components/features/refresh-control';
 import MobileSearch from './mobile-search';
 import MobileWeatherIcon from './mobile-weather-icon';
 import type { MobileLabels } from './mobile-types';
@@ -61,9 +62,10 @@ export default function MobileHomePage({
       <section className="mobile-current">
         <div className="mobile-current__heading">
           <div>
-            <h1>{location}</h1>
+            <h1 title={location}>{location}</h1>
             <p>{t(`WMO.${descriptionKey}`)}</p>
           </div>
+          <RefreshControl />
         </div>
 
         <div className="mobile-current__hero">

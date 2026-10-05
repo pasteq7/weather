@@ -35,8 +35,8 @@ function TodayWeatherCardSkeleton() {
             <Skeleton className="h-7 w-[82%] max-w-56 rounded-md sm:h-8" />
             <Skeleton className="mt-1 h-3 w-28 rounded-full sm:h-4" />
           </div>
-          <div className="today-weather-card__updated flex shrink-0 flex-col items-end gap-1 text-right">
-            <Skeleton className="h-2.5 w-14 rounded-full" />
+          <div className="flex min-h-9 shrink-0 items-center gap-1.5 px-2">
+            <Skeleton className="size-4 rounded-full" />
             <Skeleton className="h-3 w-10 rounded-full" />
           </div>
         </div>

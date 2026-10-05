@@ -71,11 +71,6 @@
     padding: max(0.25rem, env(safe-area-inset-top)) 0.75rem 0.25rem;
   }
 
-  .mobile-weather-feedback .weather-refresh-status button {
-    min-height: 2.5rem;
-    flex-shrink: 0;
-  }
-
   .mobile-page-transition[data-direction="right"] {
     animation: mobile-page-enter-right 180ms cubic-bezier(0.2, 0.7, 0.2, 1);
   }
@@ -157,8 +152,7 @@
   }
 
   .mobile-search button,
-  .mobile-page-header button,
-  .mobile-current__heading button {
+  .mobile-page-header button {
     align-items: center;
     background: transparent;
     border: 0;
@@ -238,6 +232,11 @@
     align-items: flex-start;
     display: flex;
     justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .mobile-current__heading > div {
+    min-width: 0;
   }
 
   .mobile-current__heading h1 {
@@ -245,6 +244,9 @@
     font-weight: 600;
     letter-spacing: -0.025em;
     line-height: 1.08;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .mobile-current__heading p {
@@ -253,16 +255,9 @@
     margin-top: 0.28rem;
   }
 
-  .mobile-current__heading button {
-    background: var(--mobile-card);
-    border-radius: 0.5rem;
-    height: 2rem;
-    width: 2rem;
-  }
-
-  .mobile-current__heading button svg {
-    height: 1rem;
-    width: 1rem;
+  .mobile-current__heading .weather-refresh-control {
+    min-height: 2.75rem;
+    margin-top: -0.4rem;
   }
 
   .mobile-current__hero {

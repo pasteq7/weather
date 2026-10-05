@@ -5,8 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import CurrentWeatherIcon from "@/components/icons/current-weather-icon";
 import { formatTemperature, mapWmoToWeather } from "@/lib/utils";
 import { WeatherData } from "@/lib/types";
-import { useLocale, useTranslations } from 'next-intl';
-import { useAppContext } from '@/app/context/AppContext';
+import { useTranslations } from 'next-intl';
+import RefreshControl from './refresh-control';
 
 interface TodayWeatherCardProps {
   weatherData: WeatherData;
@@ -16,11 +16,6 @@ interface TodayWeatherCardProps {
 
 export default function TodayWeatherCard({ weatherData, units, location }: TodayWeatherCardProps) {
   const t = useTranslations();
-  const locale = useLocale();
-  const { lastUpdatedAt } = useAppContext();
-  const lastFetchedTime = lastUpdatedAt === null ? '' : new Intl.DateTimeFormat(locale, {
-    hour: '2-digit', minute: '2-digit',
-  }).format(lastUpdatedAt);
 
   if (!weatherData) {
     return (
@@ -51,8 +46,6 @@ export default function TodayWeatherCard({ weatherData, units, location }: Today
   const displayLocation = (location || weatherData.name || t('Weather.unknownLocation'))
     .split(',', 1)[0]
     .trim();
-  const displayLastFetchedTime = lastFetchedTime || '--:--';
-  const lastUpdatedLabel = t('Weather.lastUpdated', { time: '' }).replace(/\s*[:：]\s*$/, '');
 
   return (
     <Card className="today-weather-card weather-surface relative h-full shrink-0 overflow-hidden p-0">
@@ -67,10 +60,7 @@ export default function TodayWeatherCard({ weatherData, units, location }: Today
             </h2>
             <p className="today-weather-card__description mt-1 text-xs font-medium capitalize text-muted-foreground sm:text-sm">{description}</p>
           </div>
-          <div className="today-weather-card__updated shrink-0 text-right text-[0.66rem] font-medium leading-snug text-muted-foreground/90">
-            <span className="today-weather-card__updated-label block">{lastUpdatedLabel}</span>
-            <span className="today-weather-card__updated-time block font-medium text-card-foreground/85">{displayLastFetchedTime}</span>
-          </div>
+          <RefreshControl />
         </div>
 
         <div className="today-weather-card__current mt-3 grid min-h-0 flex-1 grid-cols-[auto_auto] content-center justify-center items-center gap-3 px-2 py-1.5 max-[20rem]:grid-cols-1 max-[20rem]:justify-items-center max-[20rem]:gap-2">

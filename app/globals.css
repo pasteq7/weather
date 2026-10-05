@@ -431,19 +431,51 @@ body,
   --skeleton-delay: -360ms;
 }
 
+.weather-refresh-control {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.5rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 150ms, color 150ms;
+}
+
+.weather-refresh-control:hover:not(:disabled) {
+  background: var(--secondary);
+  color: var(--foreground);
+}
+
+.weather-refresh-control:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.weather-refresh-control:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.weather-refresh-control svg {
+  width: 1rem;
+  height: 1rem;
+}
+
 @container (max-width: 25rem) {
   .today-weather-card__title {
     font-size: 1.5rem;
   }
 
-  .today-weather-card__updated {
-    min-width: 3.75rem;
-    padding-inline: 0.65rem;
-  }
-
-  .today-weather-card__updated-label {
-    display: none;
-  }
 }
 
 @container (max-width: 22rem) {
@@ -451,10 +483,6 @@ body,
     font-size: 1.35rem;
   }
 
-  .today-weather-card__updated {
-    min-width: 3.4rem;
-    padding-inline: 0.55rem;
-  }
 }
 
 @media (min-width: 50rem) {
@@ -741,12 +769,6 @@ body,
     margin-top: 0.25rem !important;
   }
 
-  .today-weather-card__updated {
-    border-radius: 0.45rem !important;
-    font-size: 0.56rem !important;
-    min-width: 5.25rem !important;
-    padding: 0.35rem 0.5rem !important;
-  }
 
   .today-weather-card__current {
     gap: 0.35rem !important;
